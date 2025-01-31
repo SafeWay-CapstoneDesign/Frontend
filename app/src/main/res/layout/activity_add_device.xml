@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AddDeviceActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#00FFFFFF"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="지팡이 추가"
+        app:navigationIcon="@drawable/back" />
+
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="665dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="250sp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingBottom="50sp">
+
+            <ImageView
+                android:id="@+id/imageView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/material_symbols_light_search" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="10sp" />
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="지팡이를 찾고 있습니다."
+                android:textAlignment="center"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="40sp" />
+
+            <TextView
+                android:id="@+id/textView4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="40sp"
+                android:paddingRight="40sp"
+                android:text="지팡이가 켜져 있는지 확인하세요. 다른 휴대전화에 연결되어 있는 지팡이의 경우 표시되지 않을 수 있습니다."
+                android:textAlignment="center"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/imageView100"
+            android:layout_width="match_parent"
+            android:layout_height="5sp"
+            android:background="#d9d9d9" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingLeft="50sp"
+            android:paddingTop="30sp"
+            android:paddingRight="50sp">
+
+            <TextView
+                android:id="@+id/textView5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="연결 가능한 기기" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="20sp" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="55sp"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/imageView10"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            app:srcCompat="@drawable/maginwand" />
+
+                        <Space
+                            android:layout_width="20sp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_weight="4"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textView6"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:text="SafeWay1"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/textView7"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:text="1C:A1:35:69:8D:C5"
+                                android:textColor="#8D8C91"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="80sp"
+            android:gravity="center_horizontal|center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/cancelButton"
+                android:layout_width="150sp"
+                android:layout_height="wrap_content"
+                android:text="취소"
+                android:textSize="18sp" />
+
+            <Space
+                android:layout_width="30sp"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/rescanButton"
+                android:layout_width="150sp"
+                android:layout_height="wrap_content"
+                android:text="다시 찾기"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

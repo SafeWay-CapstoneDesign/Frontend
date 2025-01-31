@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/fragment_home"
+        android:title="홈"
+        android:icon="@drawable/home"
+/>
+    <item
+        android:id="@+id/fragment_share_location"
+        android:title="위치 및 길안내"
+        android:icon="@drawable/share_location"
+/>
+    <item
+        android:id="@+id/fragment_alert"
+        android:title="알림"
+        android:icon="@drawable/alert"/>
+    <item
+        android:id="@+id/fragment_mypage"
+        android:title="마이페이지"
+        android:icon="@drawable/mypage"
+/>
+</menu>
