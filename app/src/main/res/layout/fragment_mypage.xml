@@ -1,14 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MypageFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="마이페이지 프래그먼트입니다." />
+        android:orientation="vertical"
+        android:paddingLeft="30sp"
+        android:paddingTop="10sp"
+        android:paddingRight="30sp">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/imageView7"
+                android:layout_width="100sp"
+                android:layout_height="100sp"
+                android:src="@drawable/mypage" />
+
+            <Space
+                android:layout_width="20sp"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textView12"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="홍길동(보호자)"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textView15"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="example@google.com" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="80sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/material_dynamic_neutral100"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/guardian_interlock_btn"
+                android:layout_width="match_parent"
+                android:layout_height="60sp"
+                android:drawableLeft="@drawable/fluent_guardian_20_filled"
+                android:text="보호자 연동"
+                android:textAlignment="viewStart"
+                android:textColor="@color/black"
+                android:textSize="17sp"
+                app:backgroundTint="@color/material_dynamic_neutral100"
+                app:rippleColor="?attr/colorControlHighlight" />
+
+            <Button
+                android:id="@+id/button7"
+                android:layout_width="match_parent"
+                android:layout_height="60sp"
+                android:backgroundTint="@color/material_dynamic_neutral100"
+                android:drawableLeft="@drawable/bxs_contact"
+                android:text="긴급연락처 관리"
+                android:textAlignment="viewStart"
+                android:textColor="@color/black"
+                android:textSize="17sp"
+                app:rippleColor="?attr/colorControlHighlight" />
+
+            <Button
+                android:id="@+id/button8"
+                android:layout_width="match_parent"
+                android:layout_height="60sp"
+                android:backgroundTint="@color/material_dynamic_neutral100"
+                android:drawableLeft="@drawable/ep_connection"
+                android:text="지팡이 연결 관리"
+                android:textAlignment="viewStart"
+                android:textColor="@color/black"
+                android:textSize="17sp"
+                app:rippleColor="?attr/colorControlHighlight" />
+
+            <Button
+                android:id="@+id/button9"
+                android:layout_width="match_parent"
+                android:layout_height="60sp"
+                android:backgroundTint="@color/material_dynamic_neutral100"
+                android:drawableLeft="@drawable/mingcute_question_fill"
+                android:text="도움말"
+                android:textAlignment="viewStart"
+                android:textColor="@color/black"
+                android:textSize="17sp"
+                app:rippleColor="?attr/colorControlHighlight" />
+        </LinearLayout>
+
+    </LinearLayout>
 </FrameLayout>
