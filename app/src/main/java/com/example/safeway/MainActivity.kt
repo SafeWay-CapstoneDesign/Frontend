@@ -1,6 +1,9 @@
 package com.example.safeway
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -11,6 +14,11 @@ class MainActivity : AppCompatActivity() {
     private val binding: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
+
+    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+
+    // 연결하고자 하는 특정 기기 이름
+    private val targetDeviceName = "현준의BOOK2PRO3"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,29 +41,32 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             binding.bottomNavigationView.selectedItemId = R.id.fragment_home
         }
+
+        // 블루투스 연결 상태 확인
+        checkBluetoothConnection()
     }
 
-    fun setBottomNavigationView() {
+    private fun setBottomNavigationView() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.fragment_home -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
-                    supportActionBar?.title = "SafeWay" // toolbar 텍스트 변경
+                    supportActionBar?.title = "SafeWay"
                     true
                 }
                 R.id.fragment_share_location -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, LocationShareFragment()).commit()
-                    supportActionBar?.title = "위치 및 길안내" // toolbar 텍스트 변경
+                    supportActionBar?.title = "위치 및 길안내"
                     true
                 }
                 R.id.fragment_alert -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, AlertFragment()).commit()
-                    supportActionBar?.title = "알림" // toolbar 텍스트 변경
+                    supportActionBar?.title = "알림"
                     true
                 }
                 R.id.fragment_mypage -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, MypageFragment()).commit()
-                    supportActionBar?.title = "마이페이지" // toolbar 텍스트 변경
+                    supportActionBar?.title = "마이페이지"
                     true
                 }
                 else -> false
@@ -63,5 +74,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 블루투스 연결 상태 확인
+    private fun checkBluetoothConnection() {
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter == null) {
+            Toast.makeText(this, "블루투스를 지원하지 않는 장치입니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
+        // 블루투스가 활성화 되어 있지 않으면 활성화 요청
+        if (!bluetoothAdapter.isEnabled) {
+            bluetoothAdapter.enable()
+        }
+
+        // 페어링된 기기 목록을 확인하여 특정 기기 연결 여부 확인
+        val pairedDevices: Set<BluetoothDevice> = bluetoothAdapter.bondedDevices
+        for (device in pairedDevices) {
+            if (device.name == targetDeviceName) {
+                // 특정 기기가 연결되었을 때, connected 프래그먼트 표시
+                showConnectedFragment()
+                return
+            }
+        }
+
+        // 특정 기기가 연결되지 않으면 기본 화면 표시
+        showHomeFragment()
+    }
+
+    // 특정 기기가 연결된 경우, connected 프래그먼트 표시
+    private fun showConnectedFragment() {
+        // Bundle로 targetDeviceName 전달
+        val bundle = Bundle().apply {
+            putString("deviceName", targetDeviceName)
+        }
+
+        val fragment = FragmentHomeConnected().apply {
+            arguments = bundle
+        }
+        supportFragmentManager.beginTransaction().replace(R.id.main_container, fragment).commit()
+        supportActionBar?.title = "연결된 기기"
+    }
+
+    // 기본 HomeFragment 표시
+    private fun showHomeFragment() {
+        supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
+        supportActionBar?.title = "SafeWay"
+    }
 }

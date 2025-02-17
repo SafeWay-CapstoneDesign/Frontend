@@ -3,6 +3,9 @@
     <style name="Base.Theme.SafeWay" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+        <!-- 배경색을 #F6F6F8로 설정 -->
+        <item name="android:windowBackground">#F6F6F8</item>
     </style>
 
     <style name="Theme.SafeWay" parent="Base.Theme.SafeWay" />

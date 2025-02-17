@@ -45,7 +45,18 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // ViewModel 및 LiveData 사용을 위한 Lifecycle 추가
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+
+    // 블루투스 스캔 관련 API를 사용할 경우 (선택 사항)
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+    implementation(libs.play.services.maps)
+    implementation(files("libs\\com.skt.Tmap_1.76.jar"))
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
 }

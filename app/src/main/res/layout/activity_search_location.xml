@@ -23,10 +23,10 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:orientation="vertical"
-        android:paddingLeft="30sp"
-        android:paddingTop="10sp"
-        android:paddingRight="30sp"
-        android:paddingBottom="10sp"
+        android:paddingLeft="30dp"
+        android:paddingTop="10dp"
+        android:paddingRight="30dp"
+        android:paddingBottom="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -40,77 +40,45 @@
             android:text="가고자 하는 도착지를 설정할 수 있어요. \n설정된 도착지는 길안내 보조 기능에 사용되며, 보호자에게도 공유됩니다." />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/inputLocationLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="도착지를 입력하세요" />
+                android:hint="도착지를 입력하세요"
+                android:imeOptions="actionSearch"
+                android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <Space
             android:layout_width="match_parent"
-            android:layout_height="10sp" />
+            android:layout_height="15sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="300sp"
-            android:background="#fcfcfe"
+            android:layout_height="400sp"
+            android:background="@drawable/rounded_box"
             android:orientation="vertical"
             android:padding="20sp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/infoText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:text="검색 결과가 여기에 표시됩니다."
+                android:textAlignment="center" />
 
-                <ImageView
-                    android:id="@+id/imageView5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    app:srcCompat="@drawable/locationicon" />
-
-                <Space
-                    android:layout_width="20sp"
-                    android:layout_height="match_parent" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/textView13"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="인천대학교 송도캠퍼스 대학본부 입구"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/textView14"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="인천 연수구 송도동 50"
-                        android:textColor="#afafaf" />
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="10sp" />
-
-                    <View
-                        android:id="@+id/view"
-                        android:layout_width="match_parent"
-                        android:layout_height="1sp"
-                        android:background="#e4e4e6" />
-                </LinearLayout>
-
-            </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="vertical"
+                app:layout_constraintTop_toBottomOf="@+id/inputLocationLayout" />
         </LinearLayout>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
