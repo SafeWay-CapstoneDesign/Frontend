@@ -7,8 +7,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class LocationAdapter(private val locationList: MutableList<Location>) :
-    RecyclerView.Adapter<LocationAdapter.LocationViewHolder>() {
+class LocationAdapter(
+    private val locationList: MutableList<Location>,
+    private val onItemClick: (Location) -> Unit // 클릭 이벤트 콜백 추가
+) : RecyclerView.Adapter<LocationAdapter.LocationViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LocationViewHolder {
         val itemView = LayoutInflater.from(parent.context)
@@ -20,8 +22,11 @@ class LocationAdapter(private val locationList: MutableList<Location>) :
         val location = locationList[position]
         holder.locationName.text = location.name
         holder.locationAddress.text = location.address
-        // 아이콘이나 다른 이미지를 설정하려면 아래와 같이 설정
-        // holder.imageViewLocation.setImageResource(location.imageResId)
+
+        // 검색된 장소 클릭 시 onItemClick 호출
+        holder.itemView.setOnClickListener {
+            onItemClick(location)
+        }
     }
 
     override fun getItemCount(): Int = locationList.size

@@ -1,6 +1,8 @@
 package com.example.safeway
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -61,50 +63,67 @@ class SearchLocationActivity : AppCompatActivity() {
         }
     }
 
-    private fun searchLocation() {
-        // 검색 api 요청 부분
-        val tmapdata = TMapData()
-        // 입력된 값 가져오기
-        val strData = inputLocation.text.toString()
 
-        // 검색 결과 리스트 초기화
+
+    private fun searchLocation() {
+        val tmapdata = TMapData()
+        val strData = inputLocation.text.toString()
         locationList.clear()
 
-        // POI 검색 시작
         tmapdata.findAllPOI(strData, object : TMapData.FindAllPOIListenerCallback {
+            @SuppressLint("NotifyDataSetChanged")
             override fun onFindAllPOI(poiItem: ArrayList<TMapPOIItem>?) {
-                // poiItem이 null이 아니면 실행
                 if (poiItem != null) {
-                    // 결과 리스트에 추가
-                    for (i in poiItem.indices) {
-                        val item = poiItem[i]
-                        locationList.add(Location("${item.getPOIName()}", "${item.getPOIAddress().replace("null", "")}"))
-                        Log.d("POI Name: ", "${item.getPOIName()}, " +
-                                "Address: ${item.getPOIAddress().replace("null", "")}, " +
-                                "Point: ${item.getPOIPoint()}")
+                    for (item in poiItem) {
+                        val latitude = item.poiPoint.latitude
+                        val longitude = item.poiPoint.longitude
+
+                        locationList.add(
+                            Location(
+                                name = item.poiName,
+                                address = item.poiAddress.replace("null", ""),
+                                latitude = latitude,
+                                longitude = longitude
+                            )
+                        )
+
+                        Log.d(
+                            "POI Search",
+                            "Name: ${item.poiName}, Address: ${item.poiAddress.replace("null", "")}, " +
+                                    "Latitude: $latitude, Longitude: $longitude"
+                        )
                     }
 
-                    // 검색 결과가 추가된 후 UI 스레드에서 어댑터 갱신
                     runOnUiThread {
                         locationAdapter.notifyDataSetChanged()
                         val infoText: TextView = findViewById(R.id.infoText)
-                        infoText.visibility = View.GONE // 또는 View.INVISIBLE
+                        infoText.visibility = View.GONE
                     }
-
                 } else {
                     Log.e("TMap", "POI items are null or empty")
                 }
             }
         })
 
-        // 리사이클러뷰 초기화 및 어댑터 설정
+        setupRecyclerView()
+    }
+
+    // 리사이클러뷰 초기화 및 어댑터 설정
+    private fun setupRecyclerView() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // 어댑터가 null인 경우에만 초기화
-        if (!::locationAdapter.isInitialized) {
-            locationAdapter = LocationAdapter(locationList)
-            recyclerView.adapter = locationAdapter
+        locationAdapter = LocationAdapter(locationList) { selectedLocation ->
+            val intent = Intent().apply {
+                putExtra("latitude", selectedLocation.latitude)
+                putExtra("longitude", selectedLocation.longitude)
+                putExtra("locationName", selectedLocation.name)
+            }
+            setResult(RESULT_OK, intent)
+            finish()
         }
+
+        recyclerView.adapter = locationAdapter
     }
+
 }
