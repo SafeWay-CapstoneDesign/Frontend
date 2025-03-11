@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
     implementation(libs.play.services.maps)
     implementation(files("libs\\com.skt.Tmap_1.76.jar"))
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

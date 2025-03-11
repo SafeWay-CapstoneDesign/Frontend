@@ -1,11 +1,14 @@
 package com.example.safeway
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,7 +19,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.skt.Tmap.TMapData
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
@@ -31,6 +37,7 @@ class LocationShareFragment : Fragment() {
     private val schoolLatitude:Double = 37.374528
     private val schoolLongitude:Double = 126.633608
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
     //뷰가 생성될 때 실행되는 코드
@@ -70,6 +77,9 @@ class LocationShareFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         //tmap뷰 초기화(api인증 등)
         initializeTmapView(view)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        getCurrentLocation()
+
 
     }
 
@@ -117,6 +127,7 @@ class LocationShareFragment : Fragment() {
         tMapData.findPathDataWithType(TMapData.TMapPathType.PEDESTRIAN_PATH, tMapPointStart, tMapPointEnd) { tMapPolyLine ->
 
             if (tMapPolyLine != null) {
+                Log.d("LocationShareFragment", "경로 추가 시작")
 
                 tMapPolyLine.lineColor = Color.BLUE
                 tMapPolyLine.lineWidth = 2f
@@ -153,33 +164,37 @@ class LocationShareFragment : Fragment() {
             tMapPointStart,
             tMapPointEnd,
             object : TMapData.FindPathDataAllListenerCallback {
-                override fun onFindPathDataAll(document: Document) {
-                    val root = document.documentElement
-                    val nodeListFeature = root.getElementsByTagName("Feature")
+                override fun onFindPathDataAll(document: Document?) {
+                    document?.documentElement?.getElementsByTagName("Placemark")?.let { nodeListPlacemark ->
+                        for (i in 0 until nodeListPlacemark.length) {
+                            val nodeListPlacemarkItem = nodeListPlacemark.item(i).childNodes
+                            var descriptionText = ""
+                            var geometryType = ""
+                            var coordinates = ""
 
-                    for (i in 0 until nodeListFeature.length) {
-                        val featureNode = nodeListFeature.item(i).childNodes
-                        Log.d("nodenodenode", nodeListFeature.item(i).nodeName)
+                            for (j in 0 until nodeListPlacemarkItem.length) {
+                                val item = nodeListPlacemarkItem.item(j)
 
-                        for (j in 0 until featureNode.length) {
-                            val node = featureNode.item(j)
-                            Log.d("nodeName", node.nodeName)
-
-                            if (node.nodeName == "geometry") {
-                                val geometryNode = node.childNodes
-                                var type = ""
-                                var coordinates = ""
-
-                                for (k in 0 until geometryNode.length) {
-                                    when (geometryNode.item(k).nodeName) {
-                                        "type" -> type = geometryNode.item(k).textContent
-                                        "coordinates" -> coordinates = geometryNode.item(k).textContent
+                                when (item.nodeName) {
+                                    "description" -> {
+                                        descriptionText = item.textContent.trim()
+                                    }
+                                    "Point", "LineString" -> { // geometry 정보 추출
+                                        geometryType = item.nodeName
+                                        val coordNode = item.childNodes
+                                        for (k in 0 until coordNode.length) {
+                                            if (coordNode.item(k).nodeName == "coordinates") {
+                                                coordinates = coordNode.item(k).textContent.trim()
+                                            }
+                                        }
                                     }
                                 }
-
-                                Log.d("geometryType", type)
-                                Log.d("coordinates", coordinates)
                             }
+
+                            // 로그 출력
+                            Log.d("TMap Debug", "Description: $descriptionText")
+                            Log.d("TMap Debug", "Geometry Type: $geometryType")
+                            Log.d("TMap Debug", "Coordinates: $coordinates")
                         }
                     }
                 }
@@ -188,4 +203,50 @@ class LocationShareFragment : Fragment() {
 
 
     }
+
+    private fun getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+
+            // 위치 권한 요청
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                100
+            )
+            return
+        }
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                val userLatitude = it.latitude
+                val userLongitude = it.longitude
+
+                // TMapView에 현재 위치 표시
+                showCurrentLocationOnMap(userLatitude, userLongitude)
+            }
+        }
+    }
+
+    private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
+        val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
+        val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView
+
+        tMapView?.setCenterPoint(longitude, latitude)
+
+        val markerItem = TMapMarkerItem()
+        val tMapPoint = TMapPoint(latitude, longitude)
+        markerItem.tMapPoint = tMapPoint
+        markerItem.name = "현재 위치"
+
+        val bitmap = BitmapFactory.decodeResource(requireContext().resources, R.drawable.map_pin)
+        markerItem.icon = Bitmap.createScaledBitmap(bitmap, 100, 100, false)
+
+        markerItem.setPosition(0.5f, 1.0f)
+        tMapView?.addMarkerItem("currentLocation", markerItem)
+    }
+
+
 }
