@@ -21,6 +21,7 @@ import com.skt.Tmap.TMapData
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
 import com.skt.Tmap.TMapView
+import org.w3c.dom.Document
 
 
 class LocationShareFragment : Fragment() {
@@ -116,6 +117,7 @@ class LocationShareFragment : Fragment() {
         tMapData.findPathDataWithType(TMapData.TMapPathType.PEDESTRIAN_PATH, tMapPointStart, tMapPointEnd) { tMapPolyLine ->
 
             if (tMapPolyLine != null) {
+
                 tMapPolyLine.lineColor = Color.BLUE
                 tMapPolyLine.lineWidth = 2f
                 tMapView?.addTMapPolyLine("Line1", tMapPolyLine)
@@ -145,5 +147,45 @@ class LocationShareFragment : Fragment() {
                 Log.e("LocationShareFragment", "경로 데이터를 가져오지 못했습니다.")
             }
         }
+
+        tMapData.findPathDataAllType(
+            TMapData.TMapPathType.PEDESTRIAN_PATH,
+            tMapPointStart,
+            tMapPointEnd,
+            object : TMapData.FindPathDataAllListenerCallback {
+                override fun onFindPathDataAll(document: Document) {
+                    val root = document.documentElement
+                    val nodeListFeature = root.getElementsByTagName("Feature")
+
+                    for (i in 0 until nodeListFeature.length) {
+                        val featureNode = nodeListFeature.item(i).childNodes
+                        Log.d("nodenodenode", nodeListFeature.item(i).nodeName)
+
+                        for (j in 0 until featureNode.length) {
+                            val node = featureNode.item(j)
+                            Log.d("nodeName", node.nodeName)
+
+                            if (node.nodeName == "geometry") {
+                                val geometryNode = node.childNodes
+                                var type = ""
+                                var coordinates = ""
+
+                                for (k in 0 until geometryNode.length) {
+                                    when (geometryNode.item(k).nodeName) {
+                                        "type" -> type = geometryNode.item(k).textContent
+                                        "coordinates" -> coordinates = geometryNode.item(k).textContent
+                                    }
+                                }
+
+                                Log.d("geometryType", type)
+                                Log.d("coordinates", coordinates)
+                            }
+                        }
+                    }
+                }
+            }
+        )
+
+
     }
 }
