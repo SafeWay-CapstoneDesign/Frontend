@@ -8,12 +8,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-
-
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -25,6 +22,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SafeWay"
         tools:targetApi="31">
+        <activity
+            android:name=".EmergencyContactActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MyInfoEditActivity"
+            android:exported="false" />
         <activity
             android:name=".TestBluetoothMessageActivity"
             android:exported="false" />

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     tools:context=".MypageFragment">
 
     <LinearLayout
@@ -35,6 +35,16 @@
                 android:gravity="center"
                 android:orientation="vertical">
 
+                <Button
+                    android:id="@+id/myinfoeditBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="26dp"
+                    android:layout_gravity="right"
+                    android:padding="0dp"
+                    android:paddingTop="0dp"
+                    android:text="내 정보 수정 >"
+                    android:textSize="10sp" />
+
                 <TextView
                     android:id="@+id/textView12"
                     android:layout_width="match_parent"
@@ -62,7 +72,7 @@
             android:orientation="vertical">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/guardian_interlock_btn"
+                android:id="@+id/guardian_interlock_Enterbtn"
                 android:layout_width="match_parent"
                 android:layout_height="60sp"
                 android:drawableLeft="@drawable/fluent_guardian_20_filled"
@@ -74,7 +84,7 @@
                 app:rippleColor="?attr/colorControlHighlight" />
 
             <Button
-                android:id="@+id/button7"
+                android:id="@+id/emergencyContactEnterBtn"
                 android:layout_width="match_parent"
                 android:layout_height="60sp"
                 android:backgroundTint="@color/material_dynamic_neutral100"
