@@ -22,6 +22,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.skt.Tmap.TMapData
 import com.skt.Tmap.TMapMarkerItem
@@ -38,6 +41,10 @@ class LocationShareFragment : Fragment() {
     private val schoolLongitude:Double = 126.633608
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest: LocationRequest
+
 
 
     //뷰가 생성될 때 실행되는 코드
@@ -77,11 +84,38 @@ class LocationShareFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         //tmap뷰 초기화(api인증 등)
         initializeTmapView(view)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        getCurrentLocation()
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        createLocationRequest()
+        createLocationCallback()
+        getCurrentLocation()
+    }
+
+    private fun createLocationRequest() {
+        locationRequest = LocationRequest.create().apply {
+            interval = 1000 // 1초마다 위치 업데이트
+            fastestInterval = 1000 // 가장 빠른 업데이트 간격 (1초)
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
 
     }
+
+    private fun createLocationCallback() {
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+                val location: Location? = locationResult.lastLocation
+                if (location != null) {
+                    val userLatitude = location.latitude
+                    val userLongitude = location.longitude
+                    // 위치가 업데이트되었을 때 지도에 반영
+                    showCurrentLocationOnMap(userLatitude, userLongitude)
+                }
+            }
+        }
+    }
+
+
 
     private fun initializeTmapView(view:View) {
 
@@ -219,16 +253,24 @@ class LocationShareFragment : Fragment() {
             return
         }
 
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let {
-                val userLatitude = it.latitude
-                val userLongitude = it.longitude
+        // 위치 업데이트 요청
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
+    }
 
-                // TMapView에 현재 위치 표시
-                showCurrentLocationOnMap(userLatitude, userLongitude)
-            }
+    override fun onPause() {
+        super.onPause()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
         }
     }
+
+
 
     private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)

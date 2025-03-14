@@ -51,6 +51,7 @@
         android:id="@+id/button"
         android:layout_width="300dp"
         android:layout_height="53dp"
+        android:backgroundTint="#BC7C7C"
         android:text="디바이스 추가하기"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

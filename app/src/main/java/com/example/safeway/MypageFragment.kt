@@ -38,6 +38,27 @@ class MypageFragment : Fragment() {
             startActivity(intent)
         }
 
+        val connectionManagementEnterBtn: Button = view.findViewById(R.id.connectionManagementEnterBtn)
+        connectionManagementEnterBtn.setOnClickListener{
+            val intent = Intent(requireContext(), ConnectionManageActivity::class.java)
+            startActivity(intent)
+        }
+
+
+
+        //화면 테스트 진입용 임시 코드
+        val enterLoginBtn: Button = view.findViewById(R.id.enterLoginBtn)
+        enterLoginBtn.setOnClickListener {
+            val intent = Intent(requireContext(), LoginActivity::class.java)
+            startActivity(intent)
+        }
+
+        val enterSigninBtn:Button = view.findViewById(R.id.enterSignInBtn)
+        enterSigninBtn.setOnClickListener {
+            val intent = Intent(requireContext(), SignUpActivity::class.java)
+            startActivity(intent)
+        }
+
         return view
     }
 
