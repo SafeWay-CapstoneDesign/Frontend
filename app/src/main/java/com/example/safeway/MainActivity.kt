@@ -55,7 +55,10 @@ class MainActivity : AppCompatActivity() {
                 R.id.fragment_home -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
                     supportActionBar?.title = "SafeWay"
+                    checkBluetoothConnection()
+
                     true
+
                 }
                 R.id.fragment_share_location -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, LocationShareFragment()).commit()
@@ -109,6 +112,7 @@ class MainActivity : AppCompatActivity() {
         for (device in pairedDevices) {
             if (device.name == targetDeviceName) {
                 // 특정 기기가 연결되었을 때, connected 프래그먼트 표시
+//                showFindingFragment()
                 showConnectedFragment()
                 return
             }
@@ -116,6 +120,7 @@ class MainActivity : AppCompatActivity() {
 
         // 특정 기기가 연결되지 않으면 기본 화면 표시
         showHomeFragment()
+
     }
 
     // 특정 기기가 연결된 경우, connected 프래그먼트 표시
@@ -136,6 +141,12 @@ class MainActivity : AppCompatActivity() {
     private fun showHomeFragment() {
         supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
         supportActionBar?.title = "SafeWay"
+    }
+
+    private fun showFindingFragment(){
+        supportFragmentManager.beginTransaction().replace(R.id.main_container,
+            FindingDeviceFragment()).commit()
+        supportActionBar?.title = "기기 검색 중"
     }
 
 
