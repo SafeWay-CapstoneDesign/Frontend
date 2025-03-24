@@ -1,59 +1,44 @@
 package com.example.safeway
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.util.Date
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [AlertFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class AlertFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var alertAdapter: AlertAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_alert, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment AlertFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            AlertFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setupRecyclerView(view)
+    }
+
+    private fun setupRecyclerView(view: View) {
+        recyclerView = view.findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        val dummyAlerts = listOf(
+            Alert("보호자 연동", "횃불이님이 보호자 연동을 요청하였어요.", Date(System.currentTimeMillis() - 5 * 60 * 1000)),  // 5분 전
+            Alert("위치 공유", "김기수님이 목적지에 잘 도착했어요.", Date(System.currentTimeMillis() - 2 * 60 * 60 * 1000)),  // 2시간 전
+            Alert("공지사항", "비밀번호를 변경하신지 6개월이 지났어요.\n보안을 위해 비밀번호를 변경하세요", Date(System.currentTimeMillis() - 3 * 24 * 60 * 60 * 1000)) // 3일 전
+        )
+
+        alertAdapter = AlertAdapter(dummyAlerts) { selectedAlert ->
+            // 클릭 이벤트 추가 가능
+        }
+
+        recyclerView.adapter = alertAdapter
     }
 }

@@ -2,131 +2,119 @@ package com.example.safeway
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import java.io.IOException
+import java.io.OutputStream
 import java.util.UUID
 
 class TestBluetoothMessageActivity : AppCompatActivity() {
 
-    private lateinit var statusTextView: TextView
-    private lateinit var sendButton: Button
-    private lateinit var messageEditText: EditText
-    private lateinit var bluetoothGatt: BluetoothGatt
-    private var bluetoothAdapter: BluetoothAdapter? = null
+    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    private val serverDeviceName = "raspberrypi"
+    private val uuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
-    // GATT 특성 UUID (Python 코드와 일치시켜야 합니다)
-    private val characteristicUuid: UUID = UUID.fromString("0000XXXX-0000-1000-8000-00805F9B34FB")  // Python 코드와 동일하게 변경
-
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test_bluetooth_message)
 
-        statusTextView = findViewById(R.id.statusTextView)
-        sendButton = findViewById(R.id.sendButton)
-        messageEditText = findViewById(R.id.messageEditText)
-
-        // Bluetooth 어댑터 초기화
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (bluetoothAdapter == null) {
-            statusTextView.text = "Bluetooth를 지원하지 않는 기기입니다."
-            return
-        }
-
-        if (bluetoothAdapter == null || bluetoothAdapter?.isEnabled != true) {
-            statusTextView.text = "Bluetooth를 활성화하세요."
-            return
-        }
-
-        // BLE 장치 연결
-        connectToBluetoothDevice()
-
-        sendButton.setOnClickListener {
-            val messageText = messageEditText.text.toString()
-            if (messageText.isNotEmpty()) {
-                sendMessage(messageText)
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestBluetoothPermissions()
+        } else {
+            initBluetoothConnection()
         }
     }
 
-    private fun connectToBluetoothDevice() {
-        val deviceAddress = "A4:75:B9:BC:73:7D"  // Python 코드에서 사용하는 장치 주소로 변경
-        val device = bluetoothAdapter?.getRemoteDevice(deviceAddress)
+    @RequiresApi(Build.VERSION_CODES.S)
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun requestBluetoothPermissions() {
+        val permissions = arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT
+        )
 
-        if (device != null) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // 권한 요청 부분
-                return
-            }
-            bluetoothGatt = device.connectGatt(this, false, gattCallback)
-            statusTextView.text = "BLE 장치 연결 중..."
-        }
-    }
-
-    private val gattCallback = object : BluetoothGattCallback() {
-        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            super.onServicesDiscovered(gatt, status)
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                val service = gatt.getService(characteristicUuid)
-                val characteristic = service.getCharacteristic(characteristicUuid)
-                // 메시지 전송 준비
-            }
-        }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int
-        ) {
-            super.onCharacteristicRead(gatt, characteristic, status)
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                val receivedMessage = characteristic.getStringValue(0)
-                runOnUiThread {
-                    // 메시지 수신 처리
-                    statusTextView.text = "수신된 메시지: $receivedMessage"
-                }
-            }
-        }
-
-        override fun onCharacteristicWrite(
-            gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int
-        ) {
-            super.onCharacteristicWrite(gatt, characteristic, status)
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                runOnUiThread {
-                    statusTextView.text = "메시지 전송 성공"
-                }
+        val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+            if (results.all { it.value }) {
+                initBluetoothConnection()
             } else {
-                runOnUiThread {
-                    statusTextView.text = "메시지 전송 실패"
-                }
+                Toast.makeText(this, "블루투스 권한이 필요합니다.", Toast.LENGTH_LONG).show()
             }
+        }
+
+        permissionLauncher.launch(permissions)
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun initBluetoothConnection() {
+        if (bluetoothAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not supported on this device", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!bluetoothAdapter.isEnabled) {
+            bluetoothAdapter.enable()
+            Toast.makeText(this, "블루투스를 활성화합니다.", Toast.LENGTH_SHORT).show()
+        }
+
+        Toast.makeText(this, "페어링된 장치를 검색 중...", Toast.LENGTH_SHORT).show()
+
+        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
+        val targetDevice = pairedDevices?.find { it.name == serverDeviceName }
+
+        if (targetDevice != null) {
+            Toast.makeText(this, "장치 찾음: $serverDeviceName, 연결 시도 중...", Toast.LENGTH_SHORT).show()
+            connectToDevice(targetDevice)
+        } else {
+            Toast.makeText(this, "페어링된 장치에서 '$serverDeviceName'를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun sendMessage(messageText: String) {
-        bluetoothGatt?.let { gatt ->
-            val service = gatt.getService(characteristicUuid)
-            val characteristic = service.getCharacteristic(characteristicUuid)
-            characteristic.setValue(messageText)
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // 권한 요청 부분
-                return
+    private fun connectToDevice(device: BluetoothDevice) {
+        Thread {
+            var socket: BluetoothSocket? = null
+            try {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    runOnUiThread {
+                        Toast.makeText(this, "BLUETOOTH_CONNECT 권한이 없습니다.", Toast.LENGTH_LONG).show()
+                    }
+                    return@Thread
+                }
+
+                runOnUiThread { Toast.makeText(this, "장치와 연결 중...", Toast.LENGTH_SHORT).show() }
+                socket = device.createRfcommSocketToServiceRecord(uuid)
+                socket.connect()
+
+                runOnUiThread { Toast.makeText(this, "연결 성공! 메시지 전송 중...", Toast.LENGTH_SHORT).show() }
+                val outputStream: OutputStream = socket.outputStream
+                outputStream.write("Hello from Android!".toByteArray())
+
+                val inputStream = socket.inputStream
+                val buffer = ByteArray(1024)
+                val bytesRead = inputStream.read(buffer)
+                val response = String(buffer, 0, bytesRead)
+
+                runOnUiThread { Toast.makeText(this, "서버 응답: $response", Toast.LENGTH_LONG).show() }
+            } catch (e: IOException) {
+                runOnUiThread { Toast.makeText(this, "연결 실패: ${e.message}", Toast.LENGTH_LONG).show() }
+                e.printStackTrace()
+            } finally {
+                try {
+                    socket?.close()
+                    runOnUiThread { Toast.makeText(this, "연결 종료", Toast.LENGTH_SHORT).show() }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
             }
-            gatt.writeCharacteristic(characteristic)
-        }
+        }.start()
     }
 }

@@ -73,26 +73,49 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button3"
             android:layout_width="wrap_content"
-            android:layout_height="70dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="이름 변경" />
+            android:background="#00FFFFFF"
+            android:backgroundTint="#fcfcfe"
+            android:drawableTop="@drawable/mage_pen"
+            android:text="이름 변경"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:rippleColor="?attr/colorControlHighlight" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button4"
             android:layout_width="wrap_content"
-            android:layout_height="70dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="연결 해제" />
+            android:background="#00FFFFFF"
+            android:backgroundTint="#fcfcfe"
+            android:drawableTop="@drawable/pepicons_pencil_bluetooth_off"
+            android:text="연결 해제"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:rippleColor="?attr/colorControlHighlight" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button5"
             android:layout_width="wrap_content"
-            android:layout_height="70dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="등록 해제" />
+            android:background="#00FFFFFF"
+            android:backgroundTint="#fcfcfe"
+            android:drawableTop="@drawable/ant_design_disconnect_outlined"
+            android:text="등록 해제"
+            android:textAlignment="center"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:rippleColor="?attr/colorControlHighlight" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

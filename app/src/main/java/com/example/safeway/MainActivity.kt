@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
     private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
 
     // 연결하고자 하는 특정 기기 이름
-    private val targetDeviceName = "현준의BOOK2PRO3"
+    private val targetDeviceName = "raspberrypi"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 특정 기기가 연결되지 않으면 기본 화면 표시
+        // 특정 기기가 연결되지 않은 상태면 기본 화면 표시
         showHomeFragment()
 
     }

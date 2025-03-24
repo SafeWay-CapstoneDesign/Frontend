@@ -1,40 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 연결 상태 표시 -->
-    <TextView
-        android:id="@+id/statusTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="연결되지 않았습니다."
-        android:textSize="16sp"
-        android:textColor="#FF0000" />
-
-    <!-- 메시지 목록을 표시할 RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/messagesRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- 메시지 입력 영역 -->
+    <!-- 텍스트를 입력할 EditText -->
     <EditText
-        android:id="@+id/messageEditText"
+        android:id="@+id/editTextInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="메시지를 입력하세요"
-        android:inputType="text" />
+        android:hint="Enter text to send"
+        android:inputType="text"
+        android:layout_alignParentTop="true"/>
 
-    <!-- 메시지 전송 버튼 -->
+    <!-- 텍스트 전송 버튼 -->
     <Button
-        android:id="@+id/sendButton"
+        android:id="@+id/buttonSend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="전송"
-        android:layout_gravity="end"
-        android:layout_marginTop="8dp" />
-</LinearLayout>
+        android:text="Send"
+        android:layout_below="@id/editTextInput"
+        android:layout_marginTop="8dp"
+        android:layout_alignParentEnd="true"/>
+
+    <!-- 수신된 텍스트를 표시할 TextView -->
+    <TextView
+        android:id="@+id/textViewReceived"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Received text will appear here"
+        android:layout_below="@id/buttonSend"
+        android:layout_marginTop="16dp"
+        android:padding="16dp"
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/white" />
+
+</RelativeLayout>

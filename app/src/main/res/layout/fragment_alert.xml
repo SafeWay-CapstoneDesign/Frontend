@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fragment_alert"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AlertFragment">
+    android:background="#00C8C8C8"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+
+    <!-- RecyclerView (알림 목록) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="알람 프래그먼트입니다." />
-
-</FrameLayout>
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:scrollbars="vertical" />
+</LinearLayout>
