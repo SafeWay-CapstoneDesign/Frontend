@@ -27,10 +27,16 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.skt.Tmap.TMapData
+import com.skt.Tmap.TMapGpsManager
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
 import com.skt.Tmap.TMapView
 import org.w3c.dom.Document
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 
 class LocationShareFragment : Fragment() {
@@ -44,6 +50,12 @@ class LocationShareFragment : Fragment() {
 
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
+
+    private lateinit var tMapGps: TMapGpsManager
+    private var routePoints: MutableList<TMapPoint> = mutableListOf()
+    private var turnTypes: MutableList<Int> = mutableListOf()
+
+
 
 
 
@@ -72,6 +84,8 @@ class LocationShareFragment : Fragment() {
 
                 // 선택된 위치까지의 경로를 검색해서 화면에 보여줌
                 searchRoute(latitude, longitude, locationName)
+
+
             }
         }
 
@@ -100,6 +114,7 @@ class LocationShareFragment : Fragment() {
 
     }
 
+
     private fun createLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
@@ -110,6 +125,7 @@ class LocationShareFragment : Fragment() {
                     val userLongitude = location.longitude
                     // 위치가 업데이트되었을 때 지도에 반영
                     showCurrentLocationOnMap(userLatitude, userLongitude)
+                    onLocationChange(location)
                 }
             }
         }
@@ -127,6 +143,9 @@ class LocationShareFragment : Fragment() {
         val apiKey = "qsfeCUetAU2xKy85eyxNi4qtFWq2h3Uo1EjiIvR1"
         tMapView.setSKTMapApiKey(apiKey)
 
+        initGps()
+
+
         // "확대" 버튼 클릭
         val buttonZoomIn: Button = view.findViewById(R.id.buttonZoomIn)
         buttonZoomIn.setOnClickListener { tMapView.MapZoomIn() }
@@ -139,6 +158,25 @@ class LocationShareFragment : Fragment() {
         tMapView.setCenterPoint(schoolLongitude, schoolLatitude)
         tMapView.zoomLevel = 17
 
+    }
+
+    private fun initGps() {
+        tMapGps = TMapGpsManager(requireContext()).apply {
+            minTime = 1000 // 1초마다 갱신
+            minDistance = 5f // 5m 이동 시 업데이트
+            provider = TMapGpsManager.GPS_PROVIDER
+            setLocationCallback()
+        }
+        tMapGps.OpenGps()
+    }
+
+    // GPS 변경 시 호출
+    fun onLocationChange(location: Location) {
+        val currentPoint = TMapPoint(location.latitude, location.longitude)
+//        val currentPoint = TMapPoint(37.38578078194957, 126.63981250078893)
+
+        Log.d("currentTMapPoint : ", currentPoint.toString())
+        checkTurnType(currentPoint)
     }
 
 
@@ -198,6 +236,7 @@ class LocationShareFragment : Fragment() {
             tMapPointStart,
             tMapPointEnd,
             object : TMapData.FindPathDataAllListenerCallback {
+
                 override fun onFindPathDataAll(document: Document?) {
                     document?.documentElement?.getElementsByTagName("Placemark")?.let { nodeListPlacemark ->
                         for (i in 0 until nodeListPlacemark.length) {
@@ -205,9 +244,12 @@ class LocationShareFragment : Fragment() {
                             var descriptionText = ""
                             var geometryType = ""
                             var coordinates = ""
+                            var turnType = ""
 
                             for (j in 0 until nodeListPlacemarkItem.length) {
                                 val item = nodeListPlacemarkItem.item(j)
+//                                Log.d("우하하", item.nodeName)
+
 
                                 when (item.nodeName) {
                                     "description" -> {
@@ -216,24 +258,43 @@ class LocationShareFragment : Fragment() {
                                     "Point", "LineString" -> { // geometry 정보 추출
                                         geometryType = item.nodeName
                                         val coordNode = item.childNodes
+
                                         for (k in 0 until coordNode.length) {
                                             if (coordNode.item(k).nodeName == "coordinates") {
                                                 coordinates = coordNode.item(k).textContent.trim()
+                                                val parsedcoordinates = coordinates.split(" ").map { it.split(",").map { coord -> coord.toDouble() } }
+// 첫 번째 좌표만 추가
+                                                if (parsedcoordinates.isNotEmpty()) {
+                                                    val firstCoordinate = parsedcoordinates[0]
+                                                    routePoints.add(TMapPoint(firstCoordinate[1], firstCoordinate[0]))
+                                                    Log.d("routePoint추가: ", routePoints.toString())
+                                                }
                                             }
                                         }
+                                    }
+                                    "tmap:turnType" ->{
+                                        turnType = item.childNodes.item(0).textContent.trim()
+                                        turnTypes.add(turnType.toInt())
+                                        Log.d("turnType추가 : ", turnTypes.toString())
+
+//                                        Log.d("우하하", turnType)
                                     }
                                 }
                             }
 
+//                            routePoints = (routePoints + coordinates) as List<*>
+//                            turnTypes = (turnTypes + turnType) as List<Int>
+
+
                             // 로그 출력
-                            Log.d("TMap Debug", "Description: $descriptionText")
-                            Log.d("TMap Debug", "Geometry Type: $geometryType")
-                            Log.d("TMap Debug", "Coordinates: $coordinates")
+                            Log.d("TMap Debug", "Description: $descriptionText, Geometry Type: $geometryType, Coordinates: $coordinates, turnType: $turnType")
+
                         }
                     }
                 }
             }
         )
+
 
 
     }
@@ -273,6 +334,8 @@ class LocationShareFragment : Fragment() {
 
 
     private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
+        Log.d("현재 위치", "latitude: $latitude, longitude: $longitude")
+
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
         val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView
 
@@ -289,6 +352,91 @@ class LocationShareFragment : Fragment() {
         markerItem.setPosition(0.5f, 1.0f)
         tMapView?.addMarkerItem("currentLocation", markerItem)
     }
+
+    // 현재 위치와 가장 가까운 경로 포인트를 찾고, turnType을 확인하여 Toast 메시지 출력
+    private fun checkTurnType(currentPoint: TMapPoint) {
+        Log.d("checkTurnType - currentPoint", currentPoint.toString())
+
+        Log.d("checkTurnType - 최종 포인트들 : ", routePoints.toString())
+        Log.d("checkTurnType - 최종 턴타입들 : ", turnTypes.toString())
+        for (i in routePoints.indices) {
+            val point = routePoints[i]
+            Log.d("checkTurnType - 계산포인트 : ", "${currentPoint.toString()}, ${point.toString()}")
+            Log.d("checkTurnType - 거리 : ", getDistance(currentPoint, point).toString())
+            val textView10: TextView = view.findViewById(R.id.textView10)
+            if (getDistance(currentPoint, point) < 10.0) { // 10m 이내 도착 시
+//                Toast.makeText(requireContext(), "turnpoint에 접근하였습니다.", Toast.LENGTH_SHORT).show()
+                val turnMessage = getTurnMessage(turnTypes[i])
+                Log.d("checkTurnType ", "turnpoint에 접근하였습니다., ${turnTypes[i]}")
+                if (turnMessage.isNotEmpty()) {
+                    textView10.setText(turnMessage)
+//                    Toast.makeText(requireContext(), turnMessage, Toast.LENGTH_SHORT).show()
+                }
+                break
+            }else{
+                textView10.setText("직진하세요")
+
+            }
+        }
+    }
+
+    // 두 좌표 간 거리 계산
+    private fun getDistance(p1: TMapPoint, p2: TMapPoint): Double {
+        val lat1 = Math.toRadians(p1.latitude)
+        val lon1 = Math.toRadians(p1.longitude)
+        val lat2 = Math.toRadians(p2.latitude)
+        val lon2 = Math.toRadians(p2.longitude)
+
+        val dLat = lat2 - lat1
+        val dLon = lon2 - lon1
+
+        // Haversine formula
+        val a = sin(dLat / 2).pow(2) + cos(lat1) * cos(lat2) * sin(dLon / 2).pow(2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        val radius = 6371000 // Earth radius in meters
+        return radius * c
+    }
+
+
+    // turnType에 따른 메시지 변환
+    private fun getTurnMessage(turnType: Int): String {
+        return when (turnType) {
+            in 1..7 -> "안내 없음"
+            11 -> "직진하세요"
+            12 -> "좌회전하세요"
+            13 -> "우회전하세요"
+            14 -> "U턴하세요"
+            16 -> "8시 방향으로 좌회전하세요"
+            17 -> "10시 방향으로 좌회전하세요"
+            18 -> "2시 방향으로 우회전하세요"
+            19 -> "4시 방향으로 우회전하세요"
+            184 -> "경유지입니다"
+            185 -> "첫 번째 경유지입니다"
+            186 -> "두 번째 경유지입니다"
+            187 -> "세 번째 경유지입니다"
+            188 -> "네 번째 경유지입니다"
+            189 -> "다섯 번째 경유지입니다"
+            125 -> "육교를 이용하세요"
+            126 -> "지하보도를 이용하세요"
+            127 -> "계단으로 진입하세요"
+            128 -> "경사로로 진입하세요"
+            129 -> "계단과 경사로로 진입하세요"
+            200 -> "출발지입니다"
+            201 -> "목적지에 도착했습니다"
+            211 -> "횡단보도를 건너세요"
+            212 -> "좌측 횡단보도를 건너세요"
+            213 -> "우측 횡단보도를 건너세요"
+            214 -> "8시 방향 횡단보도를 건너세요"
+            215 -> "10시 방향 횡단보도를 건너세요"
+            216 -> "2시 방향 횡단보도를 건너세요"
+            217 -> "4시 방향 횡단보도를 건너세요"
+            218 -> "엘리베이터를 이용하세요"
+            233 -> "직진하세요 (임시)"
+            else -> "알 수 없는 경로"
+        }
+    }
+
 
 
 }

@@ -30,7 +30,7 @@
                 android:id="@+id/destinationTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="인천대입구역"
+                android:text="목적지를 설정해주세요"
                 android:textColor="#bc7c7c"
                 android:textStyle="bold" />
 

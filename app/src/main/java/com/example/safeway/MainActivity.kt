@@ -30,6 +30,8 @@ class MainActivity : AppCompatActivity() {
 
         // Toolbar를 ActionBar로 설정
         setSupportActionBar(binding.toolbar)
+        supportActionBar?.title = null
+
 
         // 시스템 바 인셋 처리
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar)) { v, insets ->
@@ -54,7 +56,7 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.fragment_home -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
-                    supportActionBar?.title = "SafeWay"
+                    binding.toolbarTitle.text = "SafeWay"
                     checkBluetoothConnection()
 
                     true
@@ -62,17 +64,17 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.fragment_share_location -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, LocationShareFragment()).commit()
-                    supportActionBar?.title = "위치 및 길안내"
+                    binding.toolbarTitle.text = "위치 및 길안내"
                     true
                 }
                 R.id.fragment_alert -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, AlertFragment()).commit()
-                    supportActionBar?.title = "알림"
+                    binding.toolbarTitle.text = "알림"
                     true
                 }
                 R.id.fragment_mypage -> {
                     supportFragmentManager.beginTransaction().replace(R.id.main_container, MypageFragment()).commit()
-                    supportActionBar?.title = "마이페이지"
+                    binding.toolbarTitle.text = "마이페이지"
                     true
                 }
                 else -> false
@@ -134,19 +136,19 @@ class MainActivity : AppCompatActivity() {
             arguments = bundle
         }
         supportFragmentManager.beginTransaction().replace(R.id.main_container, fragment).commit()
-        supportActionBar?.title = "연결된 기기"
+        binding.toolbarTitle.text = "연결된 기기"
     }
 
     // 기본 HomeFragment 표시
     private fun showHomeFragment() {
         supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
-        supportActionBar?.title = "SafeWay"
+        binding.toolbarTitle.text = "SafeWay"
     }
 
     private fun showFindingFragment(){
         supportFragmentManager.beginTransaction().replace(R.id.main_container,
             FindingDeviceFragment()).commit()
-        supportActionBar?.title = "기기 검색 중"
+        binding.toolbarTitle.text = "기기 검색 중"
     }
 
 
