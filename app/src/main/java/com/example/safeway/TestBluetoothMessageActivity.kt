@@ -7,6 +7,9 @@ import android.bluetooth.BluetoothSocket
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -14,7 +17,6 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import java.io.IOException
-import java.io.OutputStream
 import java.util.UUID
 
 class TestBluetoothMessageActivity : AppCompatActivity() {
@@ -23,11 +25,32 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
     private val serverDeviceName = "raspberrypi"
     private val uuid: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
+    private lateinit var editTextInput: EditText
+    private lateinit var buttonSend: Button
+    private lateinit var textViewReceived: TextView
+
+    private var bluetoothSocket: BluetoothSocket? = null
+
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_test_bluetooth_message)
 
+        // UI 요소 연결
+        editTextInput = findViewById(R.id.editTextInput)
+        buttonSend = findViewById(R.id.buttonSend)
+        textViewReceived = findViewById(R.id.textViewReceived)
+
+        buttonSend.setOnClickListener {
+            val message = editTextInput.text.toString()
+            if (message.isNotBlank()) {
+                sendMessageOverBluetooth(message)
+            } else {
+                Toast.makeText(this, "보낼 메시지를 입력하세요.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 블루투스 연결 시작
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestBluetoothPermissions()
         } else {
@@ -81,7 +104,6 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
 
     private fun connectToDevice(device: BluetoothDevice) {
         Thread {
-            var socket: BluetoothSocket? = null
             try {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     runOnUiThread {
@@ -91,29 +113,49 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
                 }
 
                 runOnUiThread { Toast.makeText(this, "장치와 연결 중...", Toast.LENGTH_SHORT).show() }
-                socket = device.createRfcommSocketToServiceRecord(uuid)
-                socket.connect()
+                bluetoothSocket = device.createRfcommSocketToServiceRecord(uuid)
+                bluetoothSocket?.connect()
 
-                runOnUiThread { Toast.makeText(this, "연결 성공! 메시지 전송 중...", Toast.LENGTH_SHORT).show() }
-                val outputStream: OutputStream = socket.outputStream
-                outputStream.write("Hello from Android!".toByteArray())
-
-                val inputStream = socket.inputStream
-                val buffer = ByteArray(1024)
-                val bytesRead = inputStream.read(buffer)
-                val response = String(buffer, 0, bytesRead)
-
-                runOnUiThread { Toast.makeText(this, "서버 응답: $response", Toast.LENGTH_LONG).show() }
-            } catch (e: IOException) {
-                runOnUiThread { Toast.makeText(this, "연결 실패: ${e.message}", Toast.LENGTH_LONG).show() }
-                e.printStackTrace()
-            } finally {
-                try {
-                    socket?.close()
-                    runOnUiThread { Toast.makeText(this, "연결 종료", Toast.LENGTH_SHORT).show() }
-                } catch (e: IOException) {
-                    e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this, "연결 성공! 메시지를 입력하세요.", Toast.LENGTH_SHORT).show()
+                    buttonSend.isEnabled = true
                 }
+
+            } catch (e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this, "연결 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun sendMessageOverBluetooth(message: String) {
+        Thread {
+            try {
+                val socket = bluetoothSocket
+                if (socket != null && socket.isConnected) {
+                    val outputStream = socket.outputStream
+                    outputStream.write(message.toByteArray())
+
+                    val inputStream = socket.inputStream
+                    val buffer = ByteArray(1024)
+                    val bytesRead = inputStream.read(buffer)
+                    val response = String(buffer, 0, bytesRead)
+
+                    runOnUiThread {
+                        textViewReceived.text = "서버 응답: $response"
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, "블루투스 연결이 없습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this, "메시지 전송 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+                e.printStackTrace()
             }
         }.start()
     }

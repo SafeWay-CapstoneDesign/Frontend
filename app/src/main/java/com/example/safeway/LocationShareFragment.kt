@@ -45,6 +45,8 @@ class LocationShareFragment : Fragment() {
     private lateinit var searchLocationLauncher: ActivityResultLauncher<Intent>
     private val schoolLatitude:Double = 37.374528
     private val schoolLongitude:Double = 126.633608
+    private lateinit var location: Location
+
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -119,17 +121,33 @@ class LocationShareFragment : Fragment() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
-                val location: Location? = locationResult.lastLocation
+                location = locationResult.lastLocation!!
                 if (location != null) {
                     val userLatitude = location.latitude
                     val userLongitude = location.longitude
-                    // 위치가 업데이트되었을 때 지도에 반영
-                    showCurrentLocationOnMap(userLatitude, userLongitude)
-                    onLocationChange(location)
+
+                    // 실체 위치 오차에 대한 보정값 (왼쪽 아래 방향)
+                    val correctionLat = 0.0001
+                    val correctionLng = 0.0001
+                    val correctedLatitude = userLatitude - correctionLat
+                    val correctedLongitude = userLongitude - correctionLng
+
+                    // 지도에 보정된 위치 표시
+                    showCurrentLocationOnMap(correctedLatitude, correctedLongitude)
+
+                    // 보정된 Location 객체 생성
+                    val correctedLocation = Location(location).apply {
+                        latitude = correctedLatitude
+                        longitude = correctedLongitude
+                    }
+
+                    // 보정된 Location 전달
+                    onLocationChange(correctedLocation)
                 }
             }
         }
     }
+
 
 
 
@@ -192,7 +210,7 @@ class LocationShareFragment : Fragment() {
         tMapView?.setSKTMapApiKey(apiKey)
 
         val tMapData = TMapData()
-        val tMapPointStart = TMapPoint(schoolLatitude, schoolLongitude)   //학교 7호관 좌표
+        val tMapPointStart = TMapPoint(location.latitude, location.longitude)   //학교 7호관 좌표
         val tMapPointEnd = TMapPoint(latitude, longitude)
         Log.d("받아온 좌표정보", latitude.toString())
 
@@ -244,51 +262,48 @@ class LocationShareFragment : Fragment() {
                             var descriptionText = ""
                             var geometryType = ""
                             var coordinates = ""
-                            var turnType = ""
+                            var turnType: Int? = null  // Int?로 선언해서 null 여부 판단 가능하게 함
 
                             for (j in 0 until nodeListPlacemarkItem.length) {
                                 val item = nodeListPlacemarkItem.item(j)
-//                                Log.d("우하하", item.nodeName)
-
 
                                 when (item.nodeName) {
                                     "description" -> {
                                         descriptionText = item.textContent.trim()
                                     }
-                                    "Point", "LineString" -> { // geometry 정보 추출
+                                    "Point", "LineString" -> {
                                         geometryType = item.nodeName
                                         val coordNode = item.childNodes
 
                                         for (k in 0 until coordNode.length) {
                                             if (coordNode.item(k).nodeName == "coordinates") {
                                                 coordinates = coordNode.item(k).textContent.trim()
-                                                val parsedcoordinates = coordinates.split(" ").map { it.split(",").map { coord -> coord.toDouble() } }
-// 첫 번째 좌표만 추가
-                                                if (parsedcoordinates.isNotEmpty()) {
-                                                    val firstCoordinate = parsedcoordinates[0]
-                                                    routePoints.add(TMapPoint(firstCoordinate[1], firstCoordinate[0]))
-                                                    Log.d("routePoint추가: ", routePoints.toString())
-                                                }
                                             }
                                         }
                                     }
-                                    "tmap:turnType" ->{
-                                        turnType = item.childNodes.item(0).textContent.trim()
-                                        turnTypes.add(turnType.toInt())
-                                        Log.d("turnType추가 : ", turnTypes.toString())
-
-//                                        Log.d("우하하", turnType)
+                                    "tmap:turnType" -> {
+                                        turnType = item.childNodes.item(0).textContent.trim().toInt()
                                     }
                                 }
                             }
 
-//                            routePoints = (routePoints + coordinates) as List<*>
-//                            turnTypes = (turnTypes + turnType) as List<Int>
+                            // turnType이 있을 때만 routePoints에 좌표 추가
+                            if (turnType != null && coordinates.isNotEmpty()) {
+                                val parsedCoordinates = coordinates.split(" ")
+                                    .map { it.split(",").map { coord -> coord.toDouble() } }
 
+                                if (parsedCoordinates.isNotEmpty()) {
+                                    val firstCoordinate = parsedCoordinates[0]
+                                    val tMapPoint = TMapPoint(firstCoordinate[1], firstCoordinate[0])
+                                    routePoints.add(tMapPoint)
+                                    turnTypes.add(turnType)
 
-                            // 로그 출력
+                                    Log.d("routePoint추가: ", routePoints.toString())
+                                    Log.d("turnType추가 : ", turnTypes.toString())
+                                }
+                            }
+
                             Log.d("TMap Debug", "Description: $descriptionText, Geometry Type: $geometryType, Coordinates: $coordinates, turnType: $turnType")
-
                         }
                     }
                 }
