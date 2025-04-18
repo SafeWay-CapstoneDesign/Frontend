@@ -3,8 +3,10 @@ package com.example.safeway
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +14,16 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.safeway.databinding.ActivityMainBinding
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+
+import okhttp3.Response
+import java.io.IOException
+
+
+
 
 class MainActivity : AppCompatActivity() {
     private val binding: ActivityMainBinding by lazy {
@@ -25,15 +37,57 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val client = OkHttpClient()
+
+        val token = getSharedPreferences("auth", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        Log.d("토큰 불러오기", "불러온 토큰: $token")
+
+        if (token == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/user")
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "네트워크 오류: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code == 403) {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "로그인 정보가 만료되었습니다.", Toast.LENGTH_SHORT).show()
+                        val intent = Intent(this@MainActivity, LoginActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }
+                } else {
+                    val responseData = response.body?.string()
+                    Log.d("서버 응답", "응답 데이터: $responseData")
+                }
+            }
+        })
+
+
+        // 아래는 기존 코드
         enableEdgeToEdge()
         setContentView(binding.root)
 
-        // Toolbar를 ActionBar로 설정
         setSupportActionBar(binding.toolbar)
         supportActionBar?.title = null
 
-
-        // 시스템 바 인셋 처리
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -42,14 +96,13 @@ class MainActivity : AppCompatActivity() {
 
         setBottomNavigationView()
 
-        // 앱 초기 실행 시 홈화면으로 설정
         if (savedInstanceState == null) {
             binding.bottomNavigationView.selectedItemId = R.id.fragment_home
         }
 
-        // 블루투스 연결 상태 확인
         checkBluetoothConnection()
     }
+
 
     private fun setBottomNavigationView() {
         binding.bottomNavigationView.setOnItemSelectedListener { item ->

@@ -50,6 +50,7 @@
                 android:layout_height="wrap_content">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textInputEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -71,6 +72,7 @@
                 android:layout_height="match_parent">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textInputPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -92,6 +94,7 @@
                 android:layout_height="match_parent">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textInputPasswordConfirm"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -113,6 +116,7 @@
                 android:layout_height="match_parent">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textInputUsername"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -134,6 +138,7 @@
                 android:layout_height="match_parent">
 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/textInputPhone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -147,13 +152,13 @@
             android:orientation="vertical">
 
             <CheckBox
-                android:id="@+id/checkBox2"
+                android:id="@+id/checkboxGuardian"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="보호자이신가요?" />
 
             <Button
-                android:id="@+id/button8"
+                android:id="@+id/SignUpBtn"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:backgroundTint="#f6efbd"
@@ -176,7 +181,7 @@
                     android:textSize="16sp" />
 
                 <Button
-                    android:id="@+id/EnterLoginBtn"
+                    android:id="@+id/enterSignInBtn"
                     android:layout_width="70dp"
                     android:layout_height="wrap_content"
                     android:backgroundTint="#00FFFFFF"
