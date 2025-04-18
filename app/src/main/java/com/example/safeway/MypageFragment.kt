@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.safeway.model.User
@@ -69,30 +70,26 @@ class MypageFragment : Fragment() {
 
         val LogoutBtn: Button = view.findViewById(R.id.logoutBtn)
         LogoutBtn.setOnClickListener {
-            // SharedPreferences에서 토큰 삭제
-            val prefs = requireContext().getSharedPreferences("auth", AppCompatActivity.MODE_PRIVATE)
-            prefs.edit().remove("accessToken").apply()
+            // 로그아웃 확인 다이얼로그
+            AlertDialog.Builder(requireContext())
+                .setTitle("로그아웃")
+                .setMessage("정말 로그아웃하시겠어요?")
+                .setPositiveButton("예") { _, _ ->
+                    // SharedPreferences에서 토큰 삭제
+                    val prefs = requireContext().getSharedPreferences("auth", AppCompatActivity.MODE_PRIVATE)
+                    prefs.edit().remove("accessToken").apply()
 
-            // 로그인 화면으로 이동
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            // 백스택 제거 (뒤로가기 방지)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
+                    // 로그인 화면으로 이동
+                    val intent = Intent(requireContext(), LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                }
+                .setNegativeButton("아니오", null)
+                .show()
         }
 
 
-        // 화면 테스트 진입용 임시 코드
-        val enterLoginBtn: Button = view.findViewById(R.id.enterLoginBtn)
-        enterLoginBtn.setOnClickListener {
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            startActivity(intent)
-        }
 
-        val enterSignInBtn: Button = view.findViewById(R.id.enterSignInBtn)
-        enterSignInBtn.setOnClickListener {
-            val intent = Intent(requireContext(), SignUpActivity::class.java)
-            startActivity(intent)
-        }
 
         return view
     }

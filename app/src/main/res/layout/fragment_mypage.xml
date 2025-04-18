@@ -140,25 +140,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="60sp"
                 android:backgroundTint="#fcfcfe"
-                android:drawableLeft="@drawable/mingcute_question_fill"
+                android:drawableLeft="@drawable/logout"
                 android:text="로그아웃"
                 android:textAlignment="viewStart"
                 android:textColor="@color/black"
                 android:textSize="17sp"
                 app:rippleColor="?attr/colorControlHighlight" />
         </LinearLayout>
-
-        <Button
-            android:id="@+id/enterLoginBtn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="로그인 화면 테스트" />
-
-        <Button
-            android:id="@+id/enterSignInBtn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="회원가입 화면 테스트" />
 
     </LinearLayout>
 </FrameLayout>
