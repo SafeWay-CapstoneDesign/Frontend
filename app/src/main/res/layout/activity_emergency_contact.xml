@@ -5,6 +5,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="20dp"
+
     tools:context=".EmergencyContactActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -25,6 +27,7 @@
         android:divider="@drawable/custom_divider"
         android:orientation="vertical"
         android:padding="30dp"
+
         android:showDividers="middle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
