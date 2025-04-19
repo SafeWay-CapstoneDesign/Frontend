@@ -1,7 +1,11 @@
 package com.example.safeway
 
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -9,10 +13,15 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.textfield.TextInputEditText
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
 
 class GuardianInterlockActivity : AppCompatActivity() {
@@ -43,17 +52,25 @@ class GuardianInterlockActivity : AppCompatActivity() {
         }
 
         val emailEditText = findViewById<TextInputEditText>(R.id.emailEditText)
-        val searchButton = findViewById<Button>(R.id.searchButton)
         val addButton = findViewById<Button>(R.id.addButton)
 
-        searchButton.setOnClickListener {
-            val email = emailEditText.text.toString().trim()
-            if (email.isNotEmpty()) {
-                checkGuardianExists(email)
+        emailEditText.setOnEditorActionListener { _, actionId, event ->
+            val isEnterPressed = (actionId == EditorInfo.IME_ACTION_SEARCH) ||
+                    (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
+
+            if (isEnterPressed) {
+                val email = emailEditText.text.toString().trim()
+                if (email.isNotEmpty()) {
+                    checkGuardianExists(email)
+                } else {
+                    Toast.makeText(this, "이메일을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                }
+                true  // 이벤트 소비
             } else {
-                Toast.makeText(this, "이메일을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                false
             }
         }
+
 
         addButton.setOnClickListener {
             if (guardianEmail != null) {
@@ -93,6 +110,7 @@ class GuardianInterlockActivity : AppCompatActivity() {
 
                         runOnUiThread {
                             val infoText = findViewById<TextView>(R.id.infoText)
+                            val searchedUserLayout = findViewById<LinearLayout>(R.id.searchedUserLayout)
                             if (exists) {
                                 val username = json.getString("username")
                                 val role = json.getString("role")
@@ -102,6 +120,7 @@ class GuardianInterlockActivity : AppCompatActivity() {
                                 findViewById<TextView>(R.id.nameTextView).text = username
                                 findViewById<TextView>(R.id.roleTextView).text = "($role)"
                                 infoText.text = "보호자를 찾았습니다."
+                                searchedUserLayout.visibility = View.VISIBLE
                             } else {
                                 guardianEmail = null
                                 infoText.text = "보호자를 찾을 수 없습니다."

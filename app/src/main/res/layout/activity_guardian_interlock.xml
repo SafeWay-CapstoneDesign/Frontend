@@ -49,15 +49,10 @@
                 android:id="@+id/emailEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="textEmailAddress"
                 android:hint="검색할 이메일을 입력하세요." />
         </com.google.android.material.textfield.TextInputLayout>
-
-        <Button
-            android:id="@+id/searchButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="검색"
-            android:layout_marginTop="10dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -74,16 +69,18 @@
                 android:textAlignment="center" />
 
             <LinearLayout
+                android:id="@+id/searchedUserLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="invisible">
 
                 <ImageView
                     android:id="@+id/imageView6"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    app:srcCompat="@drawable/rounded_image" />
+                    app:srcCompat="@drawable/mypage" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
