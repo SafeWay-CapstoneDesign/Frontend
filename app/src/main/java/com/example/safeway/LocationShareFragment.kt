@@ -3,6 +3,7 @@ package com.example.safeway
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -15,10 +16,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -31,7 +35,19 @@ import com.skt.Tmap.TMapGpsManager
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
 import com.skt.Tmap.TMapView
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import org.json.JSONObject
 import org.w3c.dom.Document
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -43,6 +59,7 @@ class LocationShareFragment : Fragment() {
     private lateinit var view:View
 
     private lateinit var searchLocationLauncher: ActivityResultLauncher<Intent>
+    //학교의 위도와 경도 값(최초 위치 세팅용)
     private val schoolLatitude:Double = 37.374528
     private val schoolLongitude:Double = 126.633608
     private lateinit var location: Location
@@ -57,6 +74,7 @@ class LocationShareFragment : Fragment() {
     private var routePoints: MutableList<TMapPoint> = mutableListOf()
     private var turnTypes: MutableList<Int> = mutableListOf()
 
+    private var role: String ="undefined"  //로그인한 유저의 역할 정보 저장. star면 위치를 post하고, parent면 위치를 get한다
 
 
 
@@ -91,6 +109,11 @@ class LocationShareFragment : Fragment() {
             }
         }
 
+        // SharedPreferences에서 role 가져오기
+        role = requireContext().getSharedPreferences("auth", AppCompatActivity.MODE_PRIVATE)
+            .getString("role", null).toString()
+        Log.d("role 불러오기", "불러온 role: $role")
+
         return view
 
     }
@@ -117,36 +140,117 @@ class LocationShareFragment : Fragment() {
     }
 
 
+    // 마지막으로 위치를 보낸 시간 (timestamp)
+    // 이 시간을 기반으로 일정 시간 간격으로 현재 위치를 서버에 보내거나 받음
+    private var lastPostedTime = 0L
+
     private fun createLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
                 location = locationResult.lastLocation!!
+
                 if (location != null) {
                     val userLatitude = location.latitude
                     val userLongitude = location.longitude
 
-                    // 실체 위치 오차에 대한 보정값 (왼쪽 아래 방향)
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastPostedTime >= 10_000) {  // 10초(=10,000ms) 이상 지났으면
+                        if (role == "STAR") {
+                            Log.d("createLocationCallback", "role이 STAR입니다.")
+                            val chkbox = view.findViewById<CheckBox>(R.id.checkBox)  // 체크박스 뷰 참조
+                            if (chkbox.isChecked) {  // 체크박스가 체크되어 있을 때만 수행
+                                postLocationToServer(userLatitude, userLongitude)  // 서버로 현재 위치를 보냄
+                            }
+                        }
+                        else if(role=="PARENT"){
+                            Log.d("createLocationCallback", "role이 PARENT입니다.")
+                            //TODO: 서버로부터 위치를 받아서 지도에 해당 위치 띄워주기
+
+                        }
+                        lastPostedTime = currentTime
+                    }
+
                     val correctionLat = 0.0001
                     val correctionLng = 0.0001
                     val correctedLatitude = userLatitude - correctionLat
                     val correctedLongitude = userLongitude - correctionLng
 
-                    // 지도에 보정된 위치 표시
                     showCurrentLocationOnMap(correctedLatitude, correctedLongitude)
 
-                    // 보정된 Location 객체 생성
                     val correctedLocation = Location(location).apply {
                         latitude = correctedLatitude
                         longitude = correctedLongitude
                     }
 
-                    // 보정된 Location 전달
                     onLocationChange(correctedLocation)
                 }
             }
         }
     }
+
+    //서버로 현재 위치 정보를 보내는 함수
+    private fun postLocationToServer(latitude: Double, longitude: Double) {
+        val token = requireContext()
+            .getSharedPreferences("auth", Context.MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        val accessToken = "Bearer $token"
+
+        if (token.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val client = OkHttpClient()
+
+        // 현재 시간을 "HH:mm:ss" 형식으로 변환
+        val currentTime = getCurrentTime()
+
+        val json = JSONObject().apply {
+            put("startName", "출발지")  // 필요한 경우 실제 출발지명으로 변경
+            put("endName", "도착지")    // 필요한 경우 실제 도착지명으로 변경
+            put("latitude", latitude)
+            put("longitude", longitude)
+            put("tdistance", 0)         // 필요 시 거리 계산해서 넣어도 됩니다
+            put("ttime", currentTime)
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val requestBody = json.toString().toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/location") // 실제 서버 URL로 수정
+            .post(requestBody)
+            .addHeader("accept", "*/*")
+            .addHeader("Authorization", accessToken)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    Log.d("LocationPost", "위치 전송 성공")
+                } else {
+                    Log.e("LocationPost", "위치 전송 실패: ${response.code}")
+                }
+            }
+        })
+    }
+
+    // 현재 시간을 "HH:mm:ss" 형식으로 반환하는 함수
+    private fun getCurrentTime(): String {
+        val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        val date = Date() // 현재 시간
+        return dateFormat.format(date)
+    }
+
+
+
+
 
 
 
@@ -188,7 +292,7 @@ class LocationShareFragment : Fragment() {
         tMapGps.OpenGps()
     }
 
-    // GPS 변경 시 호출
+    // GPS 위치값 변경 시 호출되는 함수
     fun onLocationChange(location: Location) {
         val currentPoint = TMapPoint(location.latitude, location.longitude)
 //        val currentPoint = TMapPoint(37.38578078194957, 126.63981250078893)
@@ -199,7 +303,7 @@ class LocationShareFragment : Fragment() {
 
 
 
-
+    // 경로 검색 후 지도에 띄워주고, 내부적으로 계산할 경로 정보들을 저장해두는 함수
     private fun searchRoute(latitude: Double, longitude: Double, locationName: String) {
         // 🚗 경로 표시 (API 인증 후 실행)
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
@@ -214,6 +318,7 @@ class LocationShareFragment : Fragment() {
         val tMapPointEnd = TMapPoint(latitude, longitude)
         Log.d("받아온 좌표정보", latitude.toString())
 
+        //경로를 검색하여 지도에 표시
         tMapData.findPathDataWithType(TMapData.TMapPathType.PEDESTRIAN_PATH, tMapPointStart, tMapPointEnd) { tMapPolyLine ->
 
             if (tMapPolyLine != null) {
@@ -249,6 +354,7 @@ class LocationShareFragment : Fragment() {
             }
         }
 
+        //경로를 검색하여 경로 정보를 저장
         tMapData.findPathDataAllType(
             TMapData.TMapPathType.PEDESTRIAN_PATH,
             tMapPointStart,
@@ -347,7 +453,7 @@ class LocationShareFragment : Fragment() {
     }
 
 
-
+    //현재 위치를 지도에 마커로 표시해주는 함수
     private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
         Log.d("현재 위치", "latitude: $latitude, longitude: $longitude")
 
@@ -395,7 +501,7 @@ class LocationShareFragment : Fragment() {
         }
     }
 
-    // 두 좌표 간 거리 계산
+    // 두 좌표 간 거리 계산하는 함수
     private fun getDistance(p1: TMapPoint, p2: TMapPoint): Double {
         val lat1 = Math.toRadians(p1.latitude)
         val lon1 = Math.toRadians(p1.longitude)

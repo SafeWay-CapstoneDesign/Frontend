@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(files("libs\\com.skt.Tmap_1.76.jar"))
     implementation(libs.play.services.location)
+    implementation(libs.volley)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

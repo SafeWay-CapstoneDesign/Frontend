@@ -78,9 +78,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
+                android:background="@android:color/transparent"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:background="@android:color/transparent">
+                android:padding="16dp">
 
                 <Button
                     android:id="@+id/buttonZoomIn"
@@ -97,6 +97,12 @@
                     android:text="-" />
             </LinearLayout>
         </FrameLayout>
+
+        <CheckBox
+            android:id="@+id/checkBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="보호자에게 위치 공유" />
 
     </LinearLayout>
 </FrameLayout>

@@ -1,5 +1,6 @@
 package com.example.safeway
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -14,7 +15,6 @@ import okhttp3.RequestBody
 import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
-import android.content.Intent
 
 
 class LoginActivity : AppCompatActivity() {
@@ -62,7 +62,7 @@ class LoginActivity : AppCompatActivity() {
         )
 
         val request = Request.Builder()
-            .url("http://3.39.8.9:8080/api/v1/auth/login") // 실제 서버 주소로 수정
+            .url("http://3.39.8.9:8080/api/v1/auth/login")
             .post(requestBody)
             .build()
 
@@ -83,10 +83,11 @@ class LoginActivity : AppCompatActivity() {
                         val sharedPref = getSharedPreferences("auth", MODE_PRIVATE)
                         sharedPref.edit().putString("accessToken", token).apply()
 
+                        getUserInfo(token)
 
                         Toast.makeText(this@LoginActivity, "로그인 성공", Toast.LENGTH_SHORT).show()
 
-                        // TODO: 다음 화면으로 이동 처리 (예: 메인화면으로)
+                        // 다음 화면으로 이동 처리
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                         finish()
 
@@ -96,6 +97,47 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
 
+        })
+    }
+
+    //유저 정보를 불러와서 sharedpref에 저장하는 함수
+    private fun getUserInfo(token: String) {
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/user") // 실제 API 엔드포인트
+            .addHeader("Authorization", "Bearer $token") // 토큰 추가
+            .build()
+
+        // 비동기 요청
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "서버 요청 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val jsonResponse = response.body?.string()
+                    try {
+                        // 사용자 정보 파싱
+                        val user = JSONObject(jsonResponse)
+                        val role = user.getString("role")
+
+                        // SharedPreferences에 role 저장
+                        val sharedPref = getSharedPreferences("auth", MODE_PRIVATE)
+                        sharedPref.edit().putString("role", role).apply()
+
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            Toast.makeText(this@LoginActivity, "응답 파싱 오류", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@LoginActivity, "응답 오류: ${response.code}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         })
     }
 }
