@@ -257,6 +257,7 @@ class LocationShareFragment : Fragment() {
 
 
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun initializeTmapView(view:View) {
 
         val linearLayoutTmap = view.findViewById<LinearLayout>(R.id.linearLayoutTmap)
@@ -281,6 +282,11 @@ class LocationShareFragment : Fragment() {
         // 지도 중심 학교로 설정
         tMapView.setCenterPoint(schoolLongitude, schoolLatitude)
         tMapView.zoomLevel = 17
+
+        tMapView.setOnTouchListener { _, _ ->
+            lastUserInteractionTime = System.currentTimeMillis()
+            false  // 이벤트 전달을 막지 않음
+        }
 
     }
 
@@ -454,15 +460,24 @@ class LocationShareFragment : Fragment() {
         }
     }
 
+    private var isFirstLocationUpdate = true
+    private var lastUserInteractionTime = System.currentTimeMillis()
+
 
     //현재 위치를 지도에 마커로 표시해주는 함수
     private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
         Log.d("현재 위치", "latitude: $latitude, longitude: $longitude")
 
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
-        val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView
+        val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView ?: return
 
-        tMapView?.setCenterPoint(longitude, latitude)
+        val currentTime = System.currentTimeMillis()
+
+        // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
+        if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
+            tMapView.setCenterPoint(longitude, latitude)
+            isFirstLocationUpdate = false
+        }
 
         val markerItem = TMapMarkerItem()
         val tMapPoint = TMapPoint(latitude, longitude)
@@ -473,8 +488,9 @@ class LocationShareFragment : Fragment() {
         markerItem.icon = Bitmap.createScaledBitmap(bitmap, 100, 100, false)
 
         markerItem.setPosition(0.5f, 1.0f)
-        tMapView?.addMarkerItem("currentLocation", markerItem)
+        tMapView.addMarkerItem("currentLocation", markerItem)
     }
+
 
     // 현재 위치와 가장 가까운 경로 포인트를 찾고, turnType을 확인하여 Toast 메시지 출력
     private fun checkTurnType(currentPoint: TMapPoint) {
