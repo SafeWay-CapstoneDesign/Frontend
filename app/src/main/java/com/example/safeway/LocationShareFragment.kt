@@ -156,45 +156,33 @@ class LocationShareFragment : Fragment() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
-                location = locationResult.lastLocation!!
 
-                if (location != null) {
-                    val userLatitude = location.latitude
-                    val userLongitude = location.longitude
-
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastPostedTime >= 10_000) {  // 10초(=10,000ms) 이상 지났으면
-                        if (role == "STAR") {
-                            Log.d("createLocationCallback", "role이 STAR입니다.")
-                            val chkbox = view.findViewById<CheckBox>(R.id.checkBox)  // 체크박스 뷰 참조
-                            if (chkbox.isChecked) {  // 체크박스가 체크되어 있을 때만 수행
-                                postLocationToServer(userLatitude, userLongitude)  // 서버로 현재 위치를 보냄
-                            }
-                        }
-                        else if(role=="GUARDIAN"){
-                            Log.d("createLocationCallback", "role이 GUARDIAN입니다.")
-                            //TODO: 서버로부터 위치를 받아서 지도에 해당 위치 띄워주기
-                            getConnectedLocationFromServer()
-
-
-                        }
-                        lastPostedTime = currentTime
+                // 위치 보정 적용
+                location = locationResult.lastLocation?.let { originalLocation ->
+                    Location(originalLocation).apply {
+                        latitude = originalLocation.latitude - 0.0001
+                        longitude = originalLocation.longitude - 0.0001
                     }
+                } ?: return
 
-                    val correctionLat = 0.0001
-                    val correctionLng = 0.0001
-                    val correctedLatitude = userLatitude - correctionLat
-                    val correctedLongitude = userLongitude - correctionLng
+                val userLatitude = location.latitude
+                val userLongitude = location.longitude
 
-                    showCurrentLocationOnMap(correctedLatitude, correctedLongitude)
-
-                    val correctedLocation = Location(location).apply {
-                        latitude = correctedLatitude
-                        longitude = correctedLongitude
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastPostedTime >= 10_000) {
+                    if (role == "STAR") {
+                        val chkbox = view.findViewById<CheckBox>(R.id.checkBox)
+                        if (chkbox.isChecked) {
+                            postLocationToServer(userLatitude, userLongitude)
+                        }
+                    } else if (role == "GUARDIAN") {
+                        getConnectedLocationFromServer()
                     }
-
-                    onLocationChange(correctedLocation)
+                    lastPostedTime = currentTime
                 }
+
+                showCurrentLocationOnMap(userLatitude, userLongitude)
+                onLocationChange(location)
             }
         }
     }
@@ -609,6 +597,7 @@ class LocationShareFragment : Fragment() {
                         //라즈베리파이로 turnType 메시지를 전달
                         val turnInfoMessage = "${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}, turnMessage, ${turnTypes[i].toString()}"
                         Toast.makeText(requireContext(), "turnType 다름. $turnInfoMessage 전달 시도",Toast.LENGTH_SHORT).show()
+                        Log.d("turnInfoMessage", turnInfoMessage)
 
                         BluetoothManager.sendMessage(turnInfoMessage, { response ->
                             requireActivity().runOnUiThread {
