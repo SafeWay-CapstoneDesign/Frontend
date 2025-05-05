@@ -35,49 +35,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val client = OkHttpClient()
-
-        val token = getSharedPreferences("auth", MODE_PRIVATE)
-            .getString("accessToken", null)
-
-        Log.d("토큰 불러오기", "불러온 토큰: $token")
-
-        if (token == null) {
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
-            finish()
-            return
-        }
-
-        val request = Request.Builder()
-            .url("http://3.39.8.9:8080/user")
-            .addHeader("Authorization", "Bearer $token")
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "네트워크 오류: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.code == 403) {
-                    runOnUiThread {
-                        Toast.makeText(this@MainActivity, "로그인 정보가 만료되었습니다.", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(this@MainActivity, LoginActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    }
-                } else {
-                    val responseData = response.body?.string()
-                    Log.d("서버 응답", "응답 데이터: $responseData")
-                }
-            }
-        })
-
-
         enableEdgeToEdge()
         setContentView(binding.root)
 
@@ -97,8 +54,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkBluetoothConnection()
-
-
     }
 
 

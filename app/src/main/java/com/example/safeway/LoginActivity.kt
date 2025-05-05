@@ -23,6 +23,41 @@ class LoginActivity : AppCompatActivity() {
     private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val token = getSharedPreferences("auth", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        if (token != null) {
+            val client = OkHttpClient()
+            val request = Request.Builder()
+                .url("http://3.39.8.9:8080/user")
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    runOnUiThread {
+                        Toast.makeText(this@LoginActivity, "자동 로그인 실패: 네트워크 오류", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful) {
+                        runOnUiThread {
+                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                            finish()
+                        }
+                    } else {
+                        // 유효하지 않은 토큰이므로 무시하고 로그인 화면 유지
+                        runOnUiThread {
+                            Toast.makeText(this@LoginActivity, "토큰이 만료되어 재로그인이 필요합니다", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            })
+        }
+
+        // ✅ 토큰이 있는 경우 MainActivity로 바로 이동
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
