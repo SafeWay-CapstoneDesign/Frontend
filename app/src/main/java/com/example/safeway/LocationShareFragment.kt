@@ -116,6 +116,12 @@ class LocationShareFragment : Fragment() {
             .getString("role", null).toString()
         Log.d("role 불러오기", "불러온 role: $role")
 
+        if (role == "GUARDIAN") {
+            val checkbox: CheckBox = view.findViewById(R.id.checkBox)
+            checkbox.visibility = View.GONE
+        }
+
+
         return view
 
     }
@@ -165,9 +171,11 @@ class LocationShareFragment : Fragment() {
                                 postLocationToServer(userLatitude, userLongitude)  // 서버로 현재 위치를 보냄
                             }
                         }
-                        else if(role=="PARENT"){
-                            Log.d("createLocationCallback", "role이 PARENT입니다.")
+                        else if(role=="GUARDIAN"){
+                            Log.d("createLocationCallback", "role이 GUARDIAN입니다.")
                             //TODO: 서버로부터 위치를 받아서 지도에 해당 위치 띄워주기
+                            getConnectedLocationFromServer()
+
 
                         }
                         lastPostedTime = currentTime
@@ -242,6 +250,64 @@ class LocationShareFragment : Fragment() {
             }
         })
     }
+
+    //서버로부터 지팡이 사용자의 위치를 받아오는 함수
+    private fun getConnectedLocationFromServer() {
+        val token = requireContext()
+            .getSharedPreferences("auth", Context.MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        val accessToken = "Bearer $token"
+
+        if (token.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val client = OkHttpClient()
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/location/connected")  // 서버에서 위치 정보를 가져오는 엔드포인트
+            .get()
+            .addHeader("accept", "application/json")
+            .addHeader("Authorization", accessToken)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+                requireActivity().runOnUiThread {
+                    Toast.makeText(requireContext(), "서버 통신 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    response.body?.string()?.let { responseBody ->
+                        try {
+                            val jsonObject = JSONObject(responseBody)
+                            val latitude = jsonObject.getDouble("latitude")
+                            val longitude = jsonObject.getDouble("longitude")
+                            val time = jsonObject.optString("ttime", "")
+
+                            Log.d("LocationGet", "위치 수신 성공: ($latitude, $longitude) at $time")
+
+                            requireActivity().runOnUiThread {
+                                showStarLocationOnMap(latitude, longitude)
+                                Toast.makeText(requireContext(), "연결된 사용자 위치 수신 완료", Toast.LENGTH_SHORT).show()
+                            }
+
+                        } catch (e: Exception) {
+                            Log.e("LocationGet", "JSON 파싱 오류: ${e.message}")
+                        }
+                    }
+                } else {
+                    Log.e("LocationGet", "위치 수신 실패: ${response.code}")
+                }
+            }
+        })
+    }
+
 
     // 현재 시간을 "HH:mm:ss" 형식으로 반환하는 함수
     private fun getCurrentTime(): String {
@@ -484,11 +550,38 @@ class LocationShareFragment : Fragment() {
         markerItem.tMapPoint = tMapPoint
         markerItem.name = "현재 위치"
 
-        val bitmap = BitmapFactory.decodeResource(requireContext().resources, R.drawable.map_pin)
-        markerItem.icon = Bitmap.createScaledBitmap(bitmap, 100, 100, false)
+        val bitmap = BitmapFactory.decodeResource(requireContext().resources, R.drawable.curlocation)
+        markerItem.icon = Bitmap.createScaledBitmap(bitmap, 80, 80, false)
 
         markerItem.setPosition(0.5f, 1.0f)
         tMapView.addMarkerItem("currentLocation", markerItem)
+    }
+
+    //star의 위치를 지도에 마커로 표시해주는 함수
+    private fun showStarLocationOnMap(latitude: Double, longitude: Double) {
+        Log.d("star의 위치", "latitude: $latitude, longitude: $longitude")
+
+        val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
+        val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView ?: return
+
+//        val currentTime = System.currentTimeMillis()
+
+//        // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
+//        if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
+//            tMapView.setCenterPoint(longitude, latitude)
+//            isFirstLocationUpdate = false
+//        }
+
+        val markerItem = TMapMarkerItem()
+        val tMapPoint = TMapPoint(latitude, longitude)
+        markerItem.tMapPoint = tMapPoint
+        markerItem.name = "star 위치"
+
+        val bitmap = BitmapFactory.decodeResource(requireContext().resources, R.drawable.star)
+        markerItem.icon = Bitmap.createScaledBitmap(bitmap, 60, 80, false)
+
+        markerItem.setPosition(0.5f, 1.0f)
+        tMapView.addMarkerItem("starLocation", markerItem)
     }
 
 
