@@ -1,18 +1,24 @@
 package com.example.safeway
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
 import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -24,11 +30,14 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 class EmergencyContactActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emergencyContactAdapter: EmergencyAdapter
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_emergency_contact)
@@ -43,8 +52,76 @@ class EmergencyContactActivity : AppCompatActivity() {
             openContactPicker()
         }
 
+        val connectedParent: LinearLayout = findViewById(R.id.ConnectedParent)
+        connectedParent.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("보호자 연결 삭제")
+                .setMessage("모든 보호자 연결을 삭제하시겠습니까?")
+                .setPositiveButton("삭제") { _, _ ->
+                    deleteConnections()
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
+
+
+        fetchParentInfo()
         fetchEmergencyContacts()
     }
+
+    //현재 로그인된 사용자의 모든 보호자 연결을 삭제
+    private fun deleteConnections() {
+        val client = OkHttpClient()
+        val token = getSharedPreferences("auth", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        Log.d("토큰 불러오기", "불러온 토큰: $token")
+
+        if (token == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/user-connections")
+            .delete()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@EmergencyContactActivity,
+                        "연결 삭제에 실패했습니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                runOnUiThread {
+                    if (response.isSuccessful) {
+                        Toast.makeText(
+                            this@EmergencyContactActivity,
+                            "모든 보호자 연결이 삭제되었습니다.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            this@EmergencyContactActivity,
+                            "삭제 실패: ${response.code}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        })
+    }
+
 
     // 연락처 선택을 위한 ActivityResultLauncher
     private val contactPickerLauncher =
@@ -170,6 +247,7 @@ class EmergencyContactActivity : AppCompatActivity() {
         })
     }
 
+    //비상 연락처 리스트 fetch하는 함수
     private fun fetchEmergencyContacts() {
         val client = OkHttpClient()
         val token = getSharedPreferences("auth", MODE_PRIVATE)
@@ -216,6 +294,68 @@ class EmergencyContactActivity : AppCompatActivity() {
                     }
                 }
             }
+        })
+    }
+
+    //star의 보호자를 조회하는 함수
+    private fun fetchParentInfo() {
+        val client = OkHttpClient()
+        val token = getSharedPreferences("auth", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        Log.d("토큰 불러오기", "불러온 토큰: $token")
+
+        if (token == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/user-connections/connections")
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@EmergencyContactActivity,
+                        "데이터를 불러오는 데 실패했습니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    Log.d("fetchParentInfo", responseBody.toString())
+
+                    val gson = Gson()
+                    val listType = object : TypeToken<List<ConnectionInfo>>() {}.type
+                    val connectionList: List<ConnectionInfo> = gson.fromJson(responseBody, listType)
+
+                    runOnUiThread {
+                        val rawDate = connectionList.firstOrNull()?.connectedAt
+                        val formattedDate = rawDate?.let {
+                            val parsedDate = OffsetDateTime.parse(it)
+                            parsedDate.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                        } ?: "연결 정보 없음"
+
+                        findViewById<TextView>(R.id.textViewConnectedAt).text = formattedDate
+                        findViewById<TextView>(R.id.textViewParentName).text = connectionList.firstOrNull()?.guardianId.toString()
+                    }
+
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@EmergencyContactActivity, "서버 오류", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
         })
     }
 

@@ -1,14 +1,15 @@
 package com.example.safeway
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
@@ -18,11 +19,8 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
-
 import okhttp3.Response
 import java.io.IOException
-
-
 
 
 class MainActivity : AppCompatActivity() {
@@ -30,11 +28,10 @@ class MainActivity : AppCompatActivity() {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    private val serverDeviceName = "raspberrypi"
 
-    // 연결하고자 하는 특정 기기 이름
-    private val targetDeviceName = "raspberrypi"
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -81,7 +78,6 @@ class MainActivity : AppCompatActivity() {
         })
 
 
-        // 아래는 기존 코드
         enableEdgeToEdge()
         setContentView(binding.root)
 
@@ -101,6 +97,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkBluetoothConnection()
+
+
     }
 
 
@@ -136,73 +134,76 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 블루투스 연결 상태 확인
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun checkBluetoothConnection() {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "블루투스를 지원하지 않는 장치입니다.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 블루투스가 활성화 되어 있지 않으면 활성화 요청
         if (!bluetoothAdapter.isEnabled) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                // 권한 요청이 필요한 경우 처리
                 return
             }
             bluetoothAdapter.enable()
         }
 
-        // 페어링된 기기 목록을 확인하여 특정 기기 연결 여부 확인
-        val pairedDevices: Set<BluetoothDevice> = bluetoothAdapter.bondedDevices
-        for (device in pairedDevices) {
-            if (device.name == targetDeviceName) {
-                // 특정 기기가 연결되었을 때, connected 프래그먼트 표시
-//                showFindingFragment()
-                showConnectedFragment()
-                return
+        // ✅ 등록된(페어링된) 기기 목록 확인
+        val bondedDevices = bluetoothAdapter.bondedDevices
+        var deviceFound = false
+        for (device in bondedDevices) {
+            Log.d("페어링된 기기", "기기 이름: ${device.name}")
+            if (device.name == serverDeviceName) {
+                deviceFound = true
+                break
             }
         }
 
-        // 특정 기기가 연결되지 않은 상태면 기본 화면 표시
-        showHomeFragment()
-
+        if (deviceFound) {
+            showFindingFragment()
+        } else {
+            showHomeFragment()
+        }
     }
 
-    // 특정 기기가 연결된 경우, connected 프래그먼트 표시
-    private fun showConnectedFragment() {
-        // Bundle로 targetDeviceName 전달
-        val bundle = Bundle().apply {
-            putString("deviceName", targetDeviceName)
-        }
-
-        val fragment = FragmentHomeConnected().apply {
-            arguments = bundle
-        }
-        supportFragmentManager.beginTransaction().replace(R.id.main_container, fragment).commit()
-        binding.toolbarTitle.text = "연결된 기기"
-    }
+//    // 특정 기기가 연결된 경우, connected 프래그먼트 표시
+//    private fun showConnectedFragment() {
+//        // Bundle로 targetDeviceName 전달
+//        val bundle = Bundle().apply {
+//            putString("deviceName", serverDeviceName)
+//        }
+//
+//        val fragment = FragmentHomeConnected().apply {
+//            arguments = bundle
+//        }
+//        supportFragmentManager.beginTransaction().replace(R.id.main_container, fragment).commit()
+//        binding.toolbarTitle.text = "연결된 기기"
+//    }
 
     // 기본 HomeFragment 표시
     private fun showHomeFragment() {
         supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
         binding.toolbarTitle.text = "SafeWay"
+        updateToolbarTitle("SafeWay")
     }
 
     private fun showFindingFragment(){
         supportFragmentManager.beginTransaction().replace(R.id.main_container,
             FindingDeviceFragment()).commit()
-        binding.toolbarTitle.text = "기기 검색 중"
+//        binding.toolbarTitle.text = "기기 검색 중"
+        updateToolbarTitle("기기 검색 중")
     }
+
+
+    // MainActivity.kt
+    fun updateToolbarTitle(title: String) {
+        binding.toolbarTitle.text = title
+    }
+
 
 
 

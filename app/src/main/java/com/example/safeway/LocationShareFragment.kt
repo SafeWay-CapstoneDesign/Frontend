@@ -76,6 +76,8 @@ class LocationShareFragment : Fragment() {
 
     private var role: String ="undefined"  //로그인한 유저의 역할 정보 저장. star면 위치를 post하고, parent면 위치를 get한다
 
+    private var lastTurnType:String = "null"
+
 
 
 
@@ -489,8 +491,31 @@ class LocationShareFragment : Fragment() {
 //                Toast.makeText(requireContext(), "turnpoint에 접근하였습니다.", Toast.LENGTH_SHORT).show()
                 val turnMessage = getTurnMessage(turnTypes[i])
                 Log.d("checkTurnType ", "turnpoint에 접근하였습니다., ${turnTypes[i]}")
-                if (turnMessage.isNotEmpty()) {
-                    textView10.setText(turnMessage)
+                if (turnMessage.isNotEmpty()) { //turnMessage가 유효하고
+                    Toast.makeText(requireContext(), "turnemssage 유효함",Toast.LENGTH_SHORT).show()
+
+                    if(lastTurnType!=turnTypes[i].toString()){ //lastTurnType과 새로운 turnType이 다른경우에만
+                        textView10.setText(turnMessage) //화면에 turnMessage를 세팅해주고,
+                        lastTurnType=turnTypes[i].toString() //lastTurnType을 update한다
+                        //라즈베리파이로 turnType 메시지를 전달
+                        val turnInfoMessage = "${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}, turnMessage, ${turnTypes[i].toString()}"
+                        Toast.makeText(requireContext(), "turnType 다름. $turnInfoMessage 전달 시도",Toast.LENGTH_SHORT).show()
+
+                        BluetoothManager.sendMessage(turnInfoMessage, { response ->
+                            requireActivity().runOnUiThread {
+                                // 예: TextView에 응답 표시
+//        binding.textView.text = "응답: $response"
+
+                            }
+                        }, { error ->
+                            requireActivity().runOnUiThread {
+                                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                            }
+                        })
+
+                    }
+
+
 //                    Toast.makeText(requireContext(), turnMessage, Toast.LENGTH_SHORT).show()
                 }
                 break

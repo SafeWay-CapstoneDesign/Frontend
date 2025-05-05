@@ -116,6 +116,11 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
                 bluetoothSocket = device.createRfcommSocketToServiceRecord(uuid)
                 bluetoothSocket?.connect()
 
+                //연결이 성공한 시점에서 이 객체에 저장
+                //이렇게 저장해두면, 다른 액티비티에서도 BluetoothManager.socket을 통해 같은 연결을 사용할 수 있게 됩니다.
+                BluetoothManager.socket = bluetoothSocket
+
+
                 runOnUiThread {
                     Toast.makeText(this, "연결 성공! 메시지를 입력하세요.", Toast.LENGTH_SHORT).show()
                     buttonSend.isEnabled = true
@@ -133,7 +138,7 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
     private fun sendMessageOverBluetooth(message: String) {
         Thread {
             try {
-                val socket = bluetoothSocket
+                val socket = BluetoothManager.socket
                 if (socket != null && socket.isConnected) {
                     val outputStream = socket.outputStream
                     outputStream.write(message.toByteArray())
@@ -159,4 +164,5 @@ class TestBluetoothMessageActivity : AppCompatActivity() {
             }
         }.start()
     }
+
 }

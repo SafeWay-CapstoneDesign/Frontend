@@ -43,5 +43,16 @@ class ConnectionManageActivity : AppCompatActivity() {
         button4.setOnClickListener(clickListener)
         button5.setOnClickListener(clickListener)
 
+        BluetoothManager.sendMessage("Hello", { response ->
+            runOnUiThread {
+//                textView.text = "응답: $response"
+            }
+        }, { error ->
+            runOnUiThread {
+                Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
+            }
+        })
+
+
     }
 }
