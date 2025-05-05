@@ -54,6 +54,10 @@
                 android:hint="검색할 이메일을 입력하세요." />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="300dp"

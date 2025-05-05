@@ -36,7 +36,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="자동으로 근처에 있는 지팡이를 검색 중이에요.\n지팡이의 전원이 켜져 있는지 확인해주세요." />
+            android:text="자동으로 이전에 연결되었던 지팡이에\n연결을 시도하고 있어요.\n지팡이의 전원이 켜져 있는지 확인해주세요."
+            android:textSize="16sp" />
 
     </LinearLayout>
 
