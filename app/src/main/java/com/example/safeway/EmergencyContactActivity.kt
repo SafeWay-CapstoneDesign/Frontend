@@ -3,6 +3,7 @@ package com.example.safeway
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
@@ -12,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -248,6 +250,7 @@ class EmergencyContactActivity : AppCompatActivity() {
     }
 
     //비상 연락처 리스트 fetch하는 함수
+    private val emergencyPhoneNumbers = mutableListOf<String>()
     private fun fetchEmergencyContacts() {
         val client = OkHttpClient()
         val token = getSharedPreferences("auth", MODE_PRIVATE)
@@ -284,6 +287,16 @@ class EmergencyContactActivity : AppCompatActivity() {
                     val responseBody = response.body?.string()
                     val emergencyContacts = parseEmergencyContacts(responseBody)
                     Log.d("emergencyContacts", responseBody.toString())
+                    // 전화번호만 저장
+                    emergencyPhoneNumbers.clear()
+                    emergencyContacts.forEach { contact ->
+                        emergencyPhoneNumbers.add(contact.phoneNumber) // phoneNumber는 JSON 필드에 맞게 수정
+                    }
+                    val sharedPrefs = getSharedPreferences("emergency", MODE_PRIVATE).edit()
+                    val jsonString = Gson().toJson(emergencyPhoneNumbers)
+                    sharedPrefs.putString("contactNumbers", jsonString)
+                    sharedPrefs.apply()
+
                     runOnUiThread {
                         setupRecyclerView(emergencyContacts)
                     }
@@ -329,6 +342,7 @@ class EmergencyContactActivity : AppCompatActivity() {
                 }
             }
 
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
                     val responseBody = response.body?.string()
@@ -346,7 +360,7 @@ class EmergencyContactActivity : AppCompatActivity() {
                         } ?: "연결 정보 없음"
 
                         findViewById<TextView>(R.id.textViewConnectedAt).text = formattedDate
-                        findViewById<TextView>(R.id.textViewParentName).text = connectionList.firstOrNull()?.guardianId.toString()
+                        findViewById<TextView>(R.id.textViewParentName).text = connectionList.firstOrNull()?.guardianName
                     }
 
                 } else {
@@ -366,9 +380,10 @@ class EmergencyContactActivity : AppCompatActivity() {
                 val jsonArray = JSONArray(responseBody)
                 for (i in 0 until jsonArray.length()) {
                     val jsonObject = jsonArray.getJSONObject(i)
+                    val id = jsonObject.getString("id")
                     val name = jsonObject.getString("ename")
                     val phone = jsonObject.getString("ephone")
-                    contacts.add(EmergencyContact(name, phone))
+                    contacts.add(EmergencyContact(id, name, phone))
                 }
             } catch (e: JSONException) {
                 e.printStackTrace()
@@ -382,15 +397,53 @@ class EmergencyContactActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         emergencyContactAdapter = EmergencyAdapter(this, contactList) { selectedContact ->
-            val intent = Intent().apply {
-                putExtra("contactName", selectedContact.name)
-                putExtra("phoneNumber", selectedContact.phoneNumber)
-            }
-            setResult(RESULT_OK, intent)
-            finish()
+            // 여기에 삭제 API 연결
+            deleteEmergencyContact(selectedContact.id)
         }
 
         recyclerView.adapter = emergencyContactAdapter
     }
+
+
+    //연락처 삭제 api
+    fun deleteEmergencyContact(id: String) {
+        val client = OkHttpClient()
+        val token = getSharedPreferences("auth", MODE_PRIVATE)
+            .getString("accessToken", null)
+
+        if (token == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
+        val request = Request.Builder()
+            .url("http://3.39.8.9:8080/emergency/$id") // 이 API 경로가 맞는지 서버 문서 확인!
+            .delete()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@EmergencyContactActivity, "삭제 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                runOnUiThread {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@EmergencyContactActivity, "삭제 완료", Toast.LENGTH_SHORT).show()
+                        fetchEmergencyContacts() // 삭제 후 리스트 갱신
+                    } else {
+                        Toast.makeText(this@EmergencyContactActivity, "삭제 실패: ${response.code}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
+    }
+
+
 
 }

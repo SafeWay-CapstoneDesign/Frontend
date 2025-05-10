@@ -12,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.safeway.databinding.ActivityMainBinding
@@ -54,6 +55,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkBluetoothConnection()
+
+        
+        //낙상 감지 서비스 실행
+        //sms 권한 체크
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), 1)
+        }
+
+        val serviceIntent = Intent(this, FallDetectionService::class.java)
+        startService(serviceIntent)
     }
 
 

@@ -160,8 +160,8 @@ class LocationShareFragment : Fragment() {
                 // 위치 보정 적용
                 location = locationResult.lastLocation?.let { originalLocation ->
                     Location(originalLocation).apply {
-                        latitude = originalLocation.latitude - 0.0001
-                        longitude = originalLocation.longitude - 0.0001
+                        latitude = originalLocation.latitude - 0.00005
+                        longitude = originalLocation.longitude - 0.000025
                     }
                 } ?: return
 
@@ -577,50 +577,54 @@ class LocationShareFragment : Fragment() {
     private fun checkTurnType(currentPoint: TMapPoint) {
         Log.d("checkTurnType - currentPoint", currentPoint.toString())
 
-        Log.d("checkTurnType - 최종 포인트들 : ", routePoints.toString())
-        Log.d("checkTurnType - 최종 턴타입들 : ", turnTypes.toString())
+        if (routePoints.isEmpty()) return
+
+        var minDistance = Double.MAX_VALUE
+        var closestIndex = -1
+
         for (i in routePoints.indices) {
             val point = routePoints[i]
-            Log.d("checkTurnType - 계산포인트 : ", "${currentPoint.toString()}, ${point.toString()}")
-            Log.d("checkTurnType - 거리 : ", getDistance(currentPoint, point).toString())
-            val textView10: TextView = view.findViewById(R.id.textView10)
-            if (getDistance(currentPoint, point) < 10.0) { // 10m 이내 도착 시
-//                Toast.makeText(requireContext(), "turnpoint에 접근하였습니다.", Toast.LENGTH_SHORT).show()
-                val turnMessage = getTurnMessage(turnTypes[i])
-                Log.d("checkTurnType ", "turnpoint에 접근하였습니다., ${turnTypes[i]}")
-                if (turnMessage.isNotEmpty()) { //turnMessage가 유효하고
-                    Toast.makeText(requireContext(), "turnemssage 유효함",Toast.LENGTH_SHORT).show()
+            val distance = getDistance(currentPoint, point)
+            Log.d("checkTurnType - 계산포인트", "$currentPoint, $point")
+            Log.d("checkTurnType - 거리", distance.toString())
 
-                    if(lastTurnType!=turnTypes[i].toString()){ //lastTurnType과 새로운 turnType이 다른경우에만
-                        textView10.setText(turnMessage) //화면에 turnMessage를 세팅해주고,
-                        lastTurnType=turnTypes[i].toString() //lastTurnType을 update한다
-                        //라즈베리파이로 turnType 메시지를 전달
-                        val turnInfoMessage = "${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}, turnMessage, ${turnTypes[i].toString()}"
-                        Toast.makeText(requireContext(), "turnType 다름. $turnInfoMessage 전달 시도",Toast.LENGTH_SHORT).show()
-                        Log.d("turnInfoMessage", turnInfoMessage)
-
-                        BluetoothManager.sendMessage(turnInfoMessage, { response ->
-                            requireActivity().runOnUiThread {
-                                // 예: TextView에 응답 표시
-//        binding.textView.text = "응답: $response"
-
-                            }
-                        }, { error ->
-                            requireActivity().runOnUiThread {
-                                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
-                            }
-                        })
-
-                    }
-
-
-//                    Toast.makeText(requireContext(), turnMessage, Toast.LENGTH_SHORT).show()
-                }
-                break
-            }else{
-                textView10.setText("직진하세요")
-
+            if (distance < minDistance) {
+                minDistance = distance
+                closestIndex = i
             }
+        }
+
+        if (closestIndex != -1 && minDistance < 10.0) {
+            val turnType = turnTypes[closestIndex]
+            val turnMessage = getTurnMessage(turnType)
+            Log.d("checkTurnType - 가장 가까운 포인트", "index: $closestIndex, 거리: $minDistance, 메시지: $turnMessage")
+
+            val textView10: TextView = view.findViewById(R.id.textView10)
+
+            if (turnMessage.isNotEmpty() && lastTurnType != turnType.toString()) {
+                textView10.text = turnMessage
+                lastTurnType = turnType.toString()
+
+                val turnInfoMessage = "${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}, turnMessage, $turnType"
+                Toast.makeText(requireContext(), "turnType 다름. $turnInfoMessage 전달 시도", Toast.LENGTH_SHORT).show()
+                Log.d("turnInfoMessage", turnInfoMessage)
+
+                BluetoothManager.sendMessage(turnInfoMessage, { response ->
+                    requireActivity().runOnUiThread {
+                        // 응답 처리
+                    }
+                }, { error ->
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                    }
+                })
+            }
+
+        } else {
+            // 가까운 포인트가 없거나 너무 멀면 직진 안내
+            val textView10: TextView = view.findViewById(R.id.textView10)
+            textView10.text = "직진하세요"
+            lastTurnType = "11"
         }
     }
 
