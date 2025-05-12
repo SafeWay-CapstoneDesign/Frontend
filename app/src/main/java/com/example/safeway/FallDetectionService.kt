@@ -76,8 +76,8 @@ class FallDetectionService : Service(), SensorEventListener {
             lastFallTimestamp = currentTime
             fallDetected = true
             Log.d("FallDetection", "충격 감지됨: $acceleration")
-            onFallDetected()
-            fallDetected = false
+//            onFallDetected()
+//            fallDetected = false
 
 
         }

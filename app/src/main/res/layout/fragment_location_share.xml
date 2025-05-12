@@ -87,7 +87,8 @@
                     android:layout_width="30sp"
                     android:layout_height="40sp"
                     android:padding="0sp"
-                    android:text="+" />
+                    android:text="+"
+                    />
 
                 <Button
                     android:id="@+id/buttonZoomOut"

@@ -231,7 +231,7 @@ class LocationShareFragment : Fragment() {
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful) {
-                    Log.d("LocationPost", "위치 전송 성공")
+                    Log.d("LocationPost", "위치 전송 성공, ${json}")
                 } else {
                     Log.e("LocationPost", "위치 전송 실패: ${response.code}")
                 }
@@ -424,6 +424,10 @@ class LocationShareFragment : Fragment() {
             object : TMapData.FindPathDataAllListenerCallback {
 
                 override fun onFindPathDataAll(document: Document?) {
+                    // 기존 데이터 초기화
+                    routePoints.clear()
+                    turnTypes.clear()
+
                     document?.documentElement?.getElementsByTagName("Placemark")?.let { nodeListPlacemark ->
                         for (i in 0 until nodeListPlacemark.length) {
                             val nodeListPlacemarkItem = nodeListPlacemark.item(i).childNodes
@@ -525,13 +529,16 @@ class LocationShareFragment : Fragment() {
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
         val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView ?: return
 
-        val currentTime = System.currentTimeMillis()
+        if(role=="STAR"){ //시각장애인인 경우에만 지도 중심점을 현위치로 함
+            val currentTime = System.currentTimeMillis()
 
-        // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
-        if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
-            tMapView.setCenterPoint(longitude, latitude)
-            isFirstLocationUpdate = false
+            // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
+            if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
+                tMapView.setCenterPoint(longitude, latitude)
+                isFirstLocationUpdate = false
+            }
         }
+
 
         val markerItem = TMapMarkerItem()
         val tMapPoint = TMapPoint(latitude, longitude)
@@ -552,13 +559,13 @@ class LocationShareFragment : Fragment() {
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
         val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView ?: return
 
-//        val currentTime = System.currentTimeMillis()
+        val currentTime = System.currentTimeMillis()
 
-//        // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
-//        if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
-//            tMapView.setCenterPoint(longitude, latitude)
-//            isFirstLocationUpdate = false
-//        }
+        // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
+        if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
+            tMapView.setCenterPoint(longitude, latitude)
+            isFirstLocationUpdate = false
+        }
 
         val markerItem = TMapMarkerItem()
         val tMapPoint = TMapPoint(latitude, longitude)

@@ -27,6 +27,8 @@ class MypageFragment : Fragment() {
     private lateinit var emailTextView: TextView
 //    private lateinit var phoneTextView: TextView
     private lateinit var roleTextView: TextView
+    private var role: String ="undefined"  //로그인한 유저의 역할 정보 저장. star면 위치를 post하고, parent면 위치를 get한다
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -88,8 +90,15 @@ class MypageFragment : Fragment() {
                 .show()
         }
 
+        // SharedPreferences에서 role 가져오기
+        role = requireContext().getSharedPreferences("auth", AppCompatActivity.MODE_PRIVATE)
+            .getString("role", null).toString()
+        Log.d("role 불러오기", "불러온 role: $role")
 
 
+        if(role=="GUARDIAN"){
+
+        }
 
 
         return view
