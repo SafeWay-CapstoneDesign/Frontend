@@ -524,33 +524,35 @@ class LocationShareFragment : Fragment() {
 
     //현재 위치를 지도에 마커로 표시해주는 함수
     private fun showCurrentLocationOnMap(latitude: Double, longitude: Double) {
+        if (!isAdded || context == null) return  // 🔐 context 붙어있는지 확인
         Log.d("현재 위치", "latitude: $latitude, longitude: $longitude")
 
         val linearLayoutTmap = view?.findViewById<LinearLayout>(R.id.linearLayoutTmap)
         val tMapView = linearLayoutTmap?.getChildAt(0) as? TMapView ?: return
 
-        if(role=="STAR"){ //시각장애인인 경우에만 지도 중심점을 현위치로 함
+        if (role == "STAR") {
             val currentTime = System.currentTimeMillis()
-
-            // 중심 이동 조건: 최초 1회 또는 사용자의 지도 조작이 5초 이상 없을 경우
             if (isFirstLocationUpdate || currentTime - lastUserInteractionTime > 5_000) {
                 tMapView.setCenterPoint(longitude, latitude)
                 isFirstLocationUpdate = false
             }
         }
 
-
         val markerItem = TMapMarkerItem()
         val tMapPoint = TMapPoint(latitude, longitude)
         markerItem.tMapPoint = tMapPoint
         markerItem.name = "현재 위치"
 
-        val bitmap = BitmapFactory.decodeResource(requireContext().resources, R.drawable.curlocation)
-        markerItem.icon = Bitmap.createScaledBitmap(bitmap, 80, 80, false)
+        // 안전한 context 접근
+        context?.let {
+            val bitmap = BitmapFactory.decodeResource(it.resources, R.drawable.curlocation)
+            markerItem.icon = Bitmap.createScaledBitmap(bitmap, 80, 80, false)
+        }
 
         markerItem.setPosition(0.5f, 1.0f)
         tMapView.addMarkerItem("currentLocation", markerItem)
     }
+
 
     //star의 위치를 지도에 마커로 표시해주는 함수
     private fun showStarLocationOnMap(latitude: Double, longitude: Double) {

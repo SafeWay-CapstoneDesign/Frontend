@@ -16,12 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.safeway.databinding.ActivityMainBinding
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import java.io.IOException
+import androidx.fragment.app.FragmentManager
 
 
 class MainActivity : AppCompatActivity() {
@@ -70,35 +65,53 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    // MainActivity.kt 내부에 추가
+    private val fragments = mutableMapOf(
+        R.id.fragment_home to HomeFragment(),
+        R.id.fragment_share_location to LocationShareFragment(),
+        R.id.fragment_alert to AlertFragment(),
+        R.id.fragment_mypage to MypageFragment(),
+    )
+
+
+    private var currentFragmentId = R.id.fragment_home
+
     private fun setBottomNavigationView() {
-        binding.bottomNavigationView.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.fragment_home -> {
-                    supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
-                    binding.toolbarTitle.text = "SafeWay"
-                    checkBluetoothConnection()
-
-                    true
-
-                }
-                R.id.fragment_share_location -> {
-                    supportFragmentManager.beginTransaction().replace(R.id.main_container, LocationShareFragment()).commit()
-                    binding.toolbarTitle.text = "위치 및 길안내"
-                    true
-                }
-                R.id.fragment_alert -> {
-                    supportFragmentManager.beginTransaction().replace(R.id.main_container, AlertFragment()).commit()
-                    binding.toolbarTitle.text = "알림"
-                    true
-                }
-                R.id.fragment_mypage -> {
-                    supportFragmentManager.beginTransaction().replace(R.id.main_container, MypageFragment()).commit()
-                    binding.toolbarTitle.text = "마이페이지"
-                    true
-                }
-                else -> false
-            }
+        // 최초에 모든 프래그먼트 add (단, 하나만 show, 나머지는 hide)
+        val transaction = supportFragmentManager.beginTransaction()
+        fragments.forEach { (id, fragment) ->
+            transaction.add(R.id.main_container, fragment, id.toString())
+            if (id != currentFragmentId) transaction.hide(fragment)
         }
+        transaction.commit()
+
+
+        binding.bottomNavigationView.setOnItemSelectedListener { item ->
+            // 🔥 FindingFragment 같은 임시 화면 제거
+            supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+
+            val selectedFragment = fragments[item.itemId] ?: return@setOnItemSelectedListener false
+            val currentFragment = fragments[currentFragmentId] ?: return@setOnItemSelectedListener false
+
+            if (item.itemId != currentFragmentId) {
+                supportFragmentManager.beginTransaction()
+                    .hide(currentFragment)
+                    .show(selectedFragment)
+                    .commit()
+                currentFragmentId = item.itemId
+            }
+
+            binding.toolbarTitle.text = when (item.itemId) {
+                R.id.fragment_home -> "SafeWay"
+                R.id.fragment_share_location -> "위치 및 길안내"
+                R.id.fragment_alert -> "알림"
+                R.id.fragment_mypage -> "마이페이지"
+                else -> ""
+            }
+
+            true
+        }
+
     }
 
     // 블루투스 연결 상태 확인
@@ -154,17 +167,28 @@ class MainActivity : AppCompatActivity() {
 
     // 기본 HomeFragment 표시
     private fun showHomeFragment() {
-        supportFragmentManager.beginTransaction().replace(R.id.main_container, HomeFragment()).commit()
-        binding.toolbarTitle.text = "SafeWay"
+        val currentFragment = fragments[currentFragmentId] ?: return
+        val homeFragment = fragments[R.id.fragment_home] ?: return
+
+        supportFragmentManager.beginTransaction()
+            .hide(currentFragment)
+            .show(homeFragment)
+            .commit()
+
+        currentFragmentId = R.id.fragment_home
         updateToolbarTitle("SafeWay")
     }
 
-    private fun showFindingFragment(){
-        supportFragmentManager.beginTransaction().replace(R.id.main_container,
-            FindingDeviceFragment()).commit()
-//        binding.toolbarTitle.text = "기기 검색 중"
+    private fun showFindingFragment() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.main_container, FindingDeviceFragment())
+            .addToBackStack(null) // 🔁 뒤로가기 가능하게 백스택 추가
+            .commit()
+
         updateToolbarTitle("기기 검색 중")
     }
+
+
 
 
     // MainActivity.kt

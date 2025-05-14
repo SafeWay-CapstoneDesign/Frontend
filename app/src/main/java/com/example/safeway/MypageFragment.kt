@@ -127,35 +127,42 @@ class MypageFragment : Fragment() {
         // 비동기 요청
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                requireActivity().runOnUiThread {
+                if (!isAdded) return  // 프래그먼트가 아직 Activity에 붙지 않았으면 return
+
+                activity?.runOnUiThread {
                     Toast.makeText(requireContext(), "서버 요청 실패", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
+                if (!isAdded) return  // attach 상태 확인
+
                 if (response.isSuccessful) {
                     val jsonResponse = response.body?.string()
                     try {
                         val user = Gson().fromJson(jsonResponse, User::class.java)
 
-                        requireActivity().runOnUiThread {
+                        activity?.runOnUiThread {
+                            if (!isAdded) return@runOnUiThread  // 이중 체크
                             usernameTextView.text = user.username
                             emailTextView.text = user.email
-//                            phoneTextView.text = user.phone
                             roleTextView.text = user.role
                         }
                     } catch (e: Exception) {
-                        requireActivity().runOnUiThread {
+                        activity?.runOnUiThread {
+                            if (!isAdded) return@runOnUiThread
                             Toast.makeText(requireContext(), "응답 파싱 오류", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
-                    requireActivity().runOnUiThread {
+                    activity?.runOnUiThread {
+                        if (!isAdded) return@runOnUiThread
                         Toast.makeText(requireContext(), "응답 오류: ${response.code}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         })
+
     }
 
     // JSON 응답에서 User 객체로 파싱
