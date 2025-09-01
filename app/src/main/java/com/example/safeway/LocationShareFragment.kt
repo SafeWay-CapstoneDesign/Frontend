@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Paint
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
@@ -91,7 +92,15 @@ class LocationShareFragment : Fragment() {
 
         // 장소 검색 버튼 클릭
         val addButton: TextView = view.findViewById(R.id.destinationTextView)
+        addButton.paintFlags = addButton.paintFlags or Paint.UNDERLINE_TEXT_FLAG //장소 설정 버튼에 밑줄
+
         addButton.setOnClickListener {
+            val intent = Intent(requireContext(), SearchLocationActivity::class.java)
+            searchLocationLauncher.launch(intent)
+        }
+
+        val statusText : TextView = view.findViewById(R.id.textView10)
+        statusText.setOnClickListener {
             val intent = Intent(requireContext(), SearchLocationActivity::class.java)
             searchLocationLauncher.launch(intent)
         }
@@ -629,6 +638,24 @@ class LocationShareFragment : Fragment() {
 
         } else {
             // 가까운 포인트가 없거나 너무 멀면 직진 안내
+            if (lastTurnType != "11") { //직전 turnType이 직진이 아닌 경우에만 라즈베리파이에 직진 정보 전달
+                val turnType = "11"
+                val turnInfoMessage = "${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}, turnMessage, $turnType"
+                Toast.makeText(requireContext(), "turnType 다름. $turnInfoMessage 전달 시도", Toast.LENGTH_SHORT).show()
+                Log.d("turnInfoMessage", turnInfoMessage)
+
+                BluetoothManager.sendMessage(turnInfoMessage, { response ->
+                    requireActivity().runOnUiThread {
+                        // 응답 처리
+                    }
+                }, { error ->
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show()
+                    }
+                })
+            }
+
+
             val textView10: TextView = view.findViewById(R.id.textView10)
             textView10.text = "직진하세요"
             lastTurnType = "11"

@@ -44,14 +44,30 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/inputLocation"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="도착지를 입력하세요"
-                android:imeOptions="actionSearch"
-                android:inputType="text" />
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="도착지를 입력하세요"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text" />
+
+                <ImageButton
+                    android:id="@+id/btnVoiceInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end|center_vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    android:contentDescription="음성 인식" />
+            </FrameLayout>
         </com.google.android.material.textfield.TextInputLayout>
+
 
         <Space
             android:layout_width="match_parent"

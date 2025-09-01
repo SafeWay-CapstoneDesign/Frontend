@@ -30,9 +30,10 @@
                 android:id="@+id/destinationTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="목적지를 설정해주세요"
+                android:text="목적지 설정"
                 android:textColor="#bc7c7c"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                />
 
         </LinearLayout>
 
@@ -44,11 +45,12 @@
             android:id="@+id/textView10"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="목적지를 설정해주세요^_^"
+            android:text="목적지를 설정해주세요!"
             android:textAlignment="center"
             android:textColor="#a2d2df"
             android:textSize="30sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            />
 
         <ImageView
             android:id="@+id/imageView3"

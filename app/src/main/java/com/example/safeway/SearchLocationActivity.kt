@@ -4,10 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +29,9 @@ class SearchLocationActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var locationAdapter: LocationAdapter
     private var locationList: MutableList<Location> = mutableListOf() // 초기화 추가
+
+    private val REQUEST_CODE_SPEECH_INPUT = 100 //음성 인식 요청 정의
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +66,40 @@ class SearchLocationActivity : AppCompatActivity() {
                 false
             }
         }
+
+
+        //음성 인식 버튼 리스너
+        val btnVoiceInput: ImageButton = findViewById(R.id.btnVoiceInput)
+        btnVoiceInput.setOnClickListener {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "도착지를 말씀하세요")
+
+
+            try {
+                startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
     }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE_SPEECH_INPUT && resultCode == RESULT_OK && data != null) {
+            val result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            if (!result.isNullOrEmpty()) {
+                val spokenText = result[0]
+                inputLocation.setText(spokenText)
+                searchLocation() // 음성 인식된 내용으로 바로 검색
+            }
+        }
+    }
+
 
 
 

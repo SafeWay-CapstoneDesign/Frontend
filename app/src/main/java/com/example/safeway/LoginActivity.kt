@@ -26,6 +26,11 @@ class LoginActivity : AppCompatActivity() {
         val token = getSharedPreferences("auth", MODE_PRIVATE)
             .getString("accessToken", null)
 
+        runOnUiThread {
+            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+            finish()
+        }
+
         if (token != null) {
             val client = OkHttpClient()
             val request = Request.Builder()
